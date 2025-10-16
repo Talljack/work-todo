@@ -45,6 +45,8 @@ describe('Time Utils', () => {
       interval: 15,
       deadline: '10:00',
       lateReminders: [],
+      toastDuration: 30,
+      toastMessage: 'Test message',
     }
 
     test('should return true for workdays', () => {

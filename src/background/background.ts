@@ -76,7 +76,7 @@ async function handleReminder(): Promise<void> {
 
   console.log('Triggering reminder...')
 
-  // 发送通知
+  // 1. 发送系统通知
   await browser.notifications.create({
     type: 'basic',
     iconUrl: 'src/assets/icon.png',
@@ -85,11 +85,32 @@ async function handleReminder(): Promise<void> {
     priority: 2,
   })
 
-  // 更新 Badge
+  // 2. 更新 Badge
   await browser.action.setBadgeText({ text: '!' })
   await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
 
-  // 安排下一次提醒
+  // 3. 在所有活动标签页显示 Toast 提醒
+  try {
+    const config = await getConfig()
+    const tabs = await browser.tabs.query({ active: true })
+    for (const tab of tabs) {
+      if (tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+        await browser.tabs
+          .sendMessage(tab.id, {
+            type: 'SHOW_TOAST',
+            message: config.workDays.toastMessage,
+            duration: config.workDays.toastDuration * 1000, // 转换为毫秒
+          })
+          .catch(() => {
+            // 忽略无法注入的页面（如 chrome:// 页面）
+          })
+      }
+    }
+  } catch (error) {
+    console.log('Failed to show toast:', error)
+  }
+
+  // 4. 安排下一次提醒
   await scheduleNextReminder()
 }
 
@@ -147,7 +168,7 @@ browser.notifications.onClicked.addListener(async () => {
   await browser.runtime.openOptionsPage()
 })
 
-// 监听来自 popup/options 的消息
+// 监听来自 popup/options/content script 的消息
 browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResponse> => {
   console.log('Message received:', message)
 
@@ -167,6 +188,10 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
 
         case 'MARK_SENT':
           await handleMarkAsSent()
+          return { success: true }
+
+        case 'OPEN_OPTIONS':
+          await browser.runtime.openOptionsPage()
           return { success: true }
 
         default:

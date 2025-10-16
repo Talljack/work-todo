@@ -232,22 +232,62 @@ const Options: React.FC = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.interval')}</label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={config.workDays.interval}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    workDays: { ...config.workDays, interval: parseInt(e.target.value) || 15 },
+                  })
+                }
+                className="input-field"
+              />
+              <p className="text-xs text-gray-500 mt-1">{t('options.workDays.intervalHint')}</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('options.workDays.toastDuration')}
+              </label>
+              <input
+                type="number"
+                min="5"
+                max="120"
+                value={config.workDays.toastDuration}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    workDays: { ...config.workDays, toastDuration: parseInt(e.target.value) || 30 },
+                  })
+                }
+                className="input-field"
+              />
+              <p className="text-xs text-gray-500 mt-1">{t('options.workDays.toastDurationHint')}</p>
+            </div>
+          </div>
+
+          {/* Toast 提醒内容 */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.interval')}</label>
-            <input
-              type="number"
-              min="1"
-              max="60"
-              value={config.workDays.interval}
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.toastMessage')}</label>
+            <textarea
+              value={config.workDays.toastMessage}
               onChange={(e) =>
                 setConfig({
                   ...config,
-                  workDays: { ...config.workDays, interval: parseInt(e.target.value) || 15 },
+                  workDays: { ...config.workDays, toastMessage: e.target.value },
                 })
               }
-              className="input-field max-w-xs"
+              className="input-field"
+              rows={3}
+              placeholder={t('options.workDays.toastMessagePlaceholder')}
             />
-            <p className="text-xs text-gray-500 mt-1">{t('options.workDays.intervalHint')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('options.workDays.toastMessageHint')}</p>
           </div>
 
           {/* 迟到提醒时间 */}
