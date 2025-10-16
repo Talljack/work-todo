@@ -1,8 +1,8 @@
 {
   "extensionName": {
-    "message": "Chrome Extension template"
+    "message": "Work TODO Reminder"
   },
   "extensionDescription": {
-    "message": "Chrome Extension description"
+    "message": "Smart reminders to send daily work plans on time"
   }
 }

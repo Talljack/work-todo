@@ -1,8 +1,8 @@
 {
   "extensionName": {
-    "message": "Chrome Extension 模板"
+    "message": "工作 TODO 提醒"
   },
   "extensionDescription": {
-    "message": "Chrome Extension 描述"
+    "message": "智能提醒，准时发送每日工作计划"
   }
 }
