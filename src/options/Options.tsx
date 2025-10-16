@@ -2,17 +2,39 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import browser from 'webextension-polyfill'
 import type { AppConfig, QuickLink } from '@/types'
-import { DEFAULT_CONFIG } from '@/types'
+import { DEFAULT_CONFIG, getDefaultTemplateContent, getDefaultToastMessage } from '@/types'
 import { getConfig, saveConfig, exportConfig, importConfig } from '@/utils/storage'
+import Input from '@/components/ui/Input'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const Options: React.FC = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // 切换语言并自动更新模板
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('language', lang)
+
+    // 自动更新模板和Toast消息为新语言
+    handleResetTemplate(lang)
+  }
+
+  // 重置为默认模板（根据当前语言）
+  const handleResetTemplate = (language?: string) => {
+    const lang = language || i18n.language
+    const defaultContent = getDefaultTemplateContent(lang)
+    const defaultMessage = getDefaultToastMessage(lang)
+    setConfig({
+      ...config,
+      template: { ...config.template, content: defaultContent },
+      workDays: { ...config.workDays, toastMessage: defaultMessage },
+    })
+  }
 
   // 加载配置
   useEffect(() => {
@@ -201,35 +223,29 @@ const Options: React.FC = () => {
 
           {/* 时间设置 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.startTime')}</label>
-              <input
-                type="time"
-                value={config.workDays.startTime}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    workDays: { ...config.workDays, startTime: e.target.value },
-                  })
-                }
-                className="input-field"
-              />
-            </div>
+            <Input
+              type="time"
+              label={t('options.workDays.startTime')}
+              value={config.workDays.startTime}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  workDays: { ...config.workDays, startTime: e.target.value },
+                })
+              }
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.deadline')}</label>
-              <input
-                type="time"
-                value={config.workDays.deadline}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    workDays: { ...config.workDays, deadline: e.target.value },
-                  })
-                }
-                className="input-field"
-              />
-            </div>
+            <Input
+              type="time"
+              label={t('options.workDays.deadline')}
+              value={config.workDays.deadline}
+              onChange={(e) =>
+                setConfig({
+                  ...config,
+                  workDays: { ...config.workDays, deadline: e.target.value },
+                })
+              }
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -263,10 +279,11 @@ const Options: React.FC = () => {
                 onChange={(e) =>
                   setConfig({
                     ...config,
-                    workDays: { ...config.workDays, toastDuration: parseInt(e.target.value) || 30 },
+                    workDays: { ...config.workDays, toastDuration: parseInt(e.target.value) || 10 },
                   })
                 }
                 className="input-field"
+                placeholder="10"
               />
               <p className="text-xs text-gray-500 mt-1">{t('options.workDays.toastDurationHint')}</p>
             </div>
@@ -276,7 +293,7 @@ const Options: React.FC = () => {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.toastMessage')}</label>
             <textarea
-              value={config.workDays.toastMessage}
+              value={config.workDays.toastMessage || ''}
               onChange={(e) =>
                 setConfig({
                   ...config,
@@ -292,35 +309,31 @@ const Options: React.FC = () => {
 
           {/* 迟到提醒时间 */}
           <div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-medium text-gray-700">{t('options.workDays.lateReminders')}</label>
               <button
                 onClick={handleAddLateReminder}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
               >
-                + {t('options.workDays.addLateReminder')}
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t('options.workDays.addLateReminder')}
               </button>
             </div>
             <div className="space-y-2">
               {config.workDays.lateReminders.map((time, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => handleLateReminderChange(index, e.target.value)}
-                    className="input-field flex-1"
-                  />
+                  <div className="flex-1">
+                    <Input type="time" value={time} onChange={(e) => handleLateReminderChange(index, e.target.value)} />
+                  </div>
                   <button
                     onClick={() => handleRemoveLateReminder(index)}
-                    className="text-red-600 hover:text-red-700 p-2"
+                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-red-600 hover:text-white hover:bg-red-600 rounded-lg transition-colors border border-red-200 hover:border-red-600"
                     title={t('options.workDays.remove')}
                   >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
@@ -331,7 +344,24 @@ const Options: React.FC = () => {
 
         {/* TODO 模板设置 */}
         <div className="card mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('options.template.title')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">{t('options.template.title')}</h2>
+            <button
+              onClick={() => handleResetTemplate()}
+              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              title={t('options.template.reset')}
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              {t('options.template.reset')}
+            </button>
+          </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.template.content')}</label>
@@ -355,8 +385,14 @@ const Options: React.FC = () => {
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">{t('options.quickLinks.title')}</h2>
-            <button onClick={handleAddQuickLink} className="btn-secondary text-sm">
-              + {t('options.quickLinks.add')}
+            <button
+              onClick={handleAddQuickLink}
+              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t('options.quickLinks.add')}
             </button>
           </div>
 
@@ -381,15 +417,11 @@ const Options: React.FC = () => {
                 </div>
                 <button
                   onClick={() => handleRemoveQuickLink(index)}
-                  className="text-red-600 hover:text-red-700 p-2 mt-1"
+                  className="flex-shrink-0 w-9 h-9 flex items-center justify-center text-red-600 hover:text-white hover:bg-red-600 rounded-lg transition-colors border border-red-200 hover:border-red-600"
                   title={t('options.quickLinks.remove')}
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
@@ -404,6 +436,20 @@ const Options: React.FC = () => {
         {/* 其他设置 */}
         <div className="card mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('options.other.title')}</h2>
+
+          {/* 语言设置 */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.other.language')}</label>
+            <select
+              value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="input-field"
+            >
+              <option value="en">English</option>
+              <option value="zh">中文 (Chinese)</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">{t('options.other.languageHint')}</p>
+          </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.other.timezone')}</label>

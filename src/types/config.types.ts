@@ -51,6 +51,61 @@ export interface AppConfig {
 }
 
 /**
+ * 获取默认模板内容（根据语言）
+ */
+export const getDefaultTemplateContent = (lang?: string): string => {
+  // 优先使用传入的语言，其次从 localStorage 读取，最后使用浏览器语言
+  const savedLang = typeof window !== 'undefined' ? localStorage.getItem('language') : null
+  const language = lang || savedLang || navigator.language
+
+  console.log('[getDefaultTemplateContent] Details:')
+  console.log('  - Input lang:', lang)
+  console.log('  - localStorage language:', savedLang)
+  console.log('  - navigator.language:', navigator.language)
+  console.log('  - Final language:', language)
+  console.log('  - Is Chinese?:', language.startsWith('zh'))
+
+  if (language.startsWith('zh')) {
+    console.log('  → Returning CHINESE template')
+    return `【昨日回顾】
+- 
+
+【今日计划】
+- 
+
+【风险与需求】
+- `
+  }
+  console.log('  → Returning ENGLISH template')
+  return `[Yesterday's Review]
+- 
+
+[Today's Plan]
+- 
+
+[Risks & Requirements]
+- `
+}
+
+/**
+ * 获取默认 Toast 消息（根据语言）
+ */
+export const getDefaultToastMessage = (lang?: string): string => {
+  // 优先使用传入的语言，其次从 localStorage 读取，最后使用浏览器语言
+  const savedLang = typeof window !== 'undefined' ? localStorage.getItem('language') : null
+  const language = lang || savedLang || navigator.language
+
+  console.log('[getDefaultToastMessage] Final language:', language)
+
+  if (language.startsWith('zh')) {
+    console.log('  → Returning CHINESE message')
+    return '别忘了发送今日工作计划！点击这里打开扩展。'
+  }
+  console.log('  → Returning ENGLISH message')
+  return "Don't forget to send today's work plan! Click here to open the extension."
+}
+
+/**
  * 默认配置
  */
 export const DEFAULT_CONFIG: AppConfig = {
@@ -60,18 +115,11 @@ export const DEFAULT_CONFIG: AppConfig = {
     interval: 15, // 15分钟
     deadline: '10:00',
     lateReminders: ['10:30', '11:00'],
-    toastDuration: 30, // 30秒
-    toastMessage: '别忘了发送今日工作计划！点击这里打开扩展。',
+    toastDuration: 10, // 10秒
+    toastMessage: getDefaultToastMessage(),
   },
   template: {
-    content: `【昨日回顾】
-- 
-
-【今日计划】
-- 
-
-【风险与需求】
-- `,
+    content: getDefaultTemplateContent(),
     quickLinks: [],
   },
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

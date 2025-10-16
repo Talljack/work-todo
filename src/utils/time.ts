@@ -139,22 +139,24 @@ export function getNextMidnight(): Date {
 
 /**
  * 计算距离截止时间还有多久
+ * 返回结构化数据，便于国际化
  */
-export function getTimeUntilDeadline(config: WorkDayConfig): string {
+export function getTimeUntilDeadline(config: WorkDayConfig): {
+  isPastDeadline: boolean
+  hours: number
+  minutes: number
+} {
   const now = new Date()
   const deadlineMinutes = parseTime(config.deadline)
   const deadline = createDateFromMinutes(deadlineMinutes, now)
 
   if (now > deadline) {
-    return '已过截止时间'
+    return { isPastDeadline: true, hours: 0, minutes: 0 }
   }
 
   const diff = deadline.getTime() - now.getTime()
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
 
-  if (hours > 0) {
-    return `${hours} 小时 ${minutes} 分钟`
-  }
-  return `${minutes} 分钟`
+  return { isPastDeadline: false, hours, minutes }
 }

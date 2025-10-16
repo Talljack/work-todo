@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill'
 import type { AppConfig, DailyState } from '@/types'
-import { DEFAULT_CONFIG, DEFAULT_DAILY_STATE } from '@/types'
+import { DEFAULT_CONFIG, DEFAULT_DAILY_STATE, getDefaultTemplateContent, getDefaultToastMessage } from '@/types'
 
 const STORAGE_KEYS = {
   CONFIG: 'app_config',
@@ -8,19 +8,62 @@ const STORAGE_KEYS = {
 } as const
 
 /**
+ * 检测模板语言是否匹配当前界面语言
+ */
+function isTemplateMismatch(template: string, currentLang: string): boolean {
+  const isChinese = currentLang.startsWith('zh')
+  const hasChineseContent = template.includes('【') || template.includes('】')
+  return isChinese !== hasChineseContent
+}
+
+/**
  * 获取应用配置
  */
 export async function getConfig(): Promise<AppConfig> {
   try {
     const result = await browser.storage.sync.get(STORAGE_KEYS.CONFIG)
+    const savedLang = typeof localStorage !== 'undefined' ? localStorage.getItem('language') : null
+    const currentLang = savedLang || navigator.language
+
     if (result[STORAGE_KEYS.CONFIG]) {
       const saved = result[STORAGE_KEYS.CONFIG] as Partial<AppConfig>
-      return {
+      const config = {
         ...DEFAULT_CONFIG,
         ...saved,
       } as AppConfig
+
+      // 检查模板语言是否匹配，不匹配则自动更新
+      if (isTemplateMismatch(config.template.content, currentLang)) {
+        console.log('[getConfig] Template language mismatch detected!')
+        console.log('  Current language:', currentLang)
+        console.log('  Template has Chinese?:', config.template.content.includes('【'))
+        console.log('  → Auto-updating template and toast message')
+
+        config.template.content = getDefaultTemplateContent(currentLang)
+        config.workDays.toastMessage = getDefaultToastMessage(currentLang)
+
+        // 自动保存更新后的配置
+        await saveConfig(config)
+      }
+
+      return config
     }
-    return DEFAULT_CONFIG
+
+    // 首次使用：根据当前语言设置生成默认配置
+    console.log('[getConfig] First time use, language:', currentLang)
+    console.log('[getConfig] Using template:', getDefaultTemplateContent(currentLang).substring(0, 50))
+
+    return {
+      ...DEFAULT_CONFIG,
+      template: {
+        ...DEFAULT_CONFIG.template,
+        content: getDefaultTemplateContent(currentLang),
+      },
+      workDays: {
+        ...DEFAULT_CONFIG.workDays,
+        toastMessage: getDefaultToastMessage(currentLang),
+      },
+    }
   } catch (error) {
     console.error('Failed to get config:', error)
     return DEFAULT_CONFIG
