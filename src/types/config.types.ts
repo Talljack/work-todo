@@ -12,6 +12,10 @@ export interface WorkDayConfig {
   deadline: string
   /** 迟到补提醒时间点，格式 ["HH:mm", "HH:mm"] */
   lateReminders: string[]
+  /** Toast 提醒持续时间（秒） */
+  toastDuration: number
+  /** Toast 提醒内容 */
+  toastMessage: string
 }
 
 /**
@@ -56,6 +60,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     interval: 15, // 15分钟
     deadline: '10:00',
     lateReminders: ['10:30', '11:00'],
+    toastDuration: 30, // 30秒
+    toastMessage: '别忘了发送今日工作计划！点击这里打开扩展。',
   },
   template: {
     content: `【昨日回顾】
