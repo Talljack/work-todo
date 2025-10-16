@@ -7,7 +7,7 @@ import { DEFAULT_CONFIG, getDefaultTemplateContent, getDefaultToastMessage } fro
 import { exportConfig, getConfig, importConfig, saveConfig } from '@/utils/storage'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
@@ -235,7 +235,7 @@ const Options: React.FC = () => {
                     id="start-time"
                     type="time"
                     value={config.workDays.startTime}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setConfig({
                         ...config,
                         workDays: { ...config.workDays, startTime: e.target.value },
@@ -250,7 +250,7 @@ const Options: React.FC = () => {
                     id="deadline"
                     type="time"
                     value={config.workDays.deadline}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setConfig({
                         ...config,
                         workDays: { ...config.workDays, deadline: e.target.value },
@@ -269,7 +269,7 @@ const Options: React.FC = () => {
                     min={1}
                     max={60}
                     value={config.workDays.interval}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setConfig({
                         ...config,
                         workDays: {
@@ -290,7 +290,7 @@ const Options: React.FC = () => {
                     min={5}
                     max={120}
                     value={config.workDays.toastDuration}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setConfig({
                         ...config,
                         workDays: {
@@ -337,7 +337,9 @@ const Options: React.FC = () => {
                       <Input
                         type="time"
                         value={time}
-                        onChange={(e) => handleLateReminderChange(index, e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleLateReminderChange(index, e.target.value)
+                        }
                         className="flex-1"
                       />
                       <Button
@@ -413,7 +415,9 @@ const Options: React.FC = () => {
                         id={`quick-link-name-${index}`}
                         value={link.name}
                         placeholder={t('options.quickLinks.namePlaceholder')}
-                        onChange={(e) => handleQuickLinkChange(index, 'name', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleQuickLinkChange(index, 'name', e.target.value)
+                        }
                       />
                     </div>
 
@@ -424,7 +428,9 @@ const Options: React.FC = () => {
                         type="url"
                         value={link.url}
                         placeholder={t('options.quickLinks.urlPlaceholder')}
-                        onChange={(e) => handleQuickLinkChange(index, 'url', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleQuickLinkChange(index, 'url', e.target.value)
+                        }
                       />
                     </div>
                   </div>
