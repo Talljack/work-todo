@@ -10,6 +10,7 @@ import manifest from './manifest.json'
 export default defineConfig({
   // @ts-expect-error @typescript-eslint/ban-ts-comment
   plugins: [react(), viteTsConfig(), crx({ manifest })],
+  base: './', // 使用相对路径
   build: {
     rollupOptions: {
       // default is multiple entry
