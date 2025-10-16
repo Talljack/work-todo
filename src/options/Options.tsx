@@ -1,18 +1,47 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CheckCircledIcon, DownloadIcon, PlusIcon, ReloadIcon, TrashIcon, UploadIcon } from '@radix-ui/react-icons'
 import browser from 'webextension-polyfill'
 import type { AppConfig, QuickLink } from '@/types'
-import { DEFAULT_CONFIG } from '@/types'
-import { getConfig, saveConfig, exportConfig, importConfig } from '@/utils/storage'
+import { DEFAULT_CONFIG, getDefaultTemplateContent, getDefaultToastMessage } from '@/types'
+import { exportConfig, getConfig, importConfig, saveConfig } from '@/utils/storage'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const Options: React.FC = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // 切换语言并自动更新模板
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('language', lang)
+
+    // 自动更新模板和 Toast 消息为新语言
+    handleResetTemplate(lang)
+  }
+
+  // 重置为默认模板（根据当前语言）
+  const handleResetTemplate = (language?: string) => {
+    const lang = language || i18n.language
+    const defaultContent = getDefaultTemplateContent(lang)
+    const defaultMessage = getDefaultToastMessage(lang)
+    setConfig({
+      ...config,
+      template: { ...config.template, content: defaultContent },
+      workDays: { ...config.workDays, toastMessage: defaultMessage },
+    })
+  }
 
   // 加载配置
   useEffect(() => {
@@ -160,309 +189,335 @@ const Options: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <ReloadIcon className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* 头部 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('options.title')}</h1>
-          <p className="text-gray-600">{t('options.description')}</p>
-        </div>
+    <div className="relative min-h-screen bg-gradient-to-b from-slate-50 to-white pb-40 pt-12">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 md:pb-12">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">{t('options.title')}</h1>
+          <p className="text-base text-gray-600 md:text-lg">{t('options.description')}</p>
+        </header>
 
-        {/* 工作日与时间设置 */}
-        <div className="card mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('options.workDays.title')}</h2>
-
-          {/* 工作日选择 */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">{t('options.workDays.selectDays')}</label>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAYS.map((day, index) => (
-                <button
-                  key={day}
-                  onClick={() => handleWorkDayChange(index)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    config.workDays.enabled[index]
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {t(`options.workDays.days.${day}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 时间设置 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.startTime')}</label>
-              <input
-                type="time"
-                value={config.workDays.startTime}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    workDays: { ...config.workDays, startTime: e.target.value },
-                  })
-                }
-                className="input-field"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.deadline')}</label>
-              <input
-                type="time"
-                value={config.workDays.deadline}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    workDays: { ...config.workDays, deadline: e.target.value },
-                  })
-                }
-                className="input-field"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.interval')}</label>
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={config.workDays.interval}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    workDays: { ...config.workDays, interval: parseInt(e.target.value) || 15 },
-                  })
-                }
-                className="input-field"
-              />
-              <p className="text-xs text-gray-500 mt-1">{t('options.workDays.intervalHint')}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('options.workDays.toastDuration')}
-              </label>
-              <input
-                type="number"
-                min="5"
-                max="120"
-                value={config.workDays.toastDuration}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    workDays: { ...config.workDays, toastDuration: parseInt(e.target.value) || 30 },
-                  })
-                }
-                className="input-field"
-              />
-              <p className="text-xs text-gray-500 mt-1">{t('options.workDays.toastDurationHint')}</p>
-            </div>
-          </div>
-
-          {/* Toast 提醒内容 */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.workDays.toastMessage')}</label>
-            <textarea
-              value={config.workDays.toastMessage}
-              onChange={(e) =>
-                setConfig({
-                  ...config,
-                  workDays: { ...config.workDays, toastMessage: e.target.value },
-                })
-              }
-              className="input-field"
-              rows={3}
-              placeholder={t('options.workDays.toastMessagePlaceholder')}
-            />
-            <p className="text-xs text-gray-500 mt-1">{t('options.workDays.toastMessageHint')}</p>
-          </div>
-
-          {/* 迟到提醒时间 */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">{t('options.workDays.lateReminders')}</label>
-              <button
-                onClick={handleAddLateReminder}
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                + {t('options.workDays.addLateReminder')}
-              </button>
-            </div>
-            <div className="space-y-2">
-              {config.workDays.lateReminders.map((time, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => handleLateReminderChange(index, e.target.value)}
-                    className="input-field flex-1"
-                  />
-                  <button
-                    onClick={() => handleRemoveLateReminder(index)}
-                    className="text-red-600 hover:text-red-700 p-2"
-                    title={t('options.workDays.remove')}
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
+        <div className="grid gap-8">
+          <Card>
+            <CardHeader className="space-y-1.5">
+              <CardTitle>{t('options.workDays.title')}</CardTitle>
+              <CardDescription>{t('options.workDays.intervalHint')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label>{t('options.workDays.selectDays')}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS.map((day, index) => (
+                    <Button
+                      key={day}
+                      type="button"
+                      variant={config.workDays.enabled[index] ? 'default' : 'outline'}
+                      size="sm"
+                      className="capitalize"
+                      onClick={() => handleWorkDayChange(index)}
+                    >
+                      {t(`options.workDays.days.${day}`)}
+                    </Button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* TODO 模板设置 */}
-        <div className="card mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('options.template.title')}</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.template.content')}</label>
-            <textarea
-              value={config.template.content}
-              onChange={(e) =>
-                setConfig({
-                  ...config,
-                  template: { ...config.template, content: e.target.value },
-                })
-              }
-              rows={10}
-              className="input-field font-mono text-sm"
-              placeholder={t('options.template.placeholder')}
-            />
-            <p className="text-xs text-gray-500 mt-1">{t('options.template.hint')}</p>
-          </div>
-        </div>
-
-        {/* 快捷链接设置 */}
-        <div className="card mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">{t('options.quickLinks.title')}</h2>
-            <button onClick={handleAddQuickLink} className="btn-secondary text-sm">
-              + {t('options.quickLinks.add')}
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {config.template.quickLinks.map((link, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={link.name}
-                    onChange={(e) => handleQuickLinkChange(index, 'name', e.target.value)}
-                    placeholder={t('options.quickLinks.namePlaceholder')}
-                    className="input-field"
-                  />
-                  <input
-                    type="url"
-                    value={link.url}
-                    onChange={(e) => handleQuickLinkChange(index, 'url', e.target.value)}
-                    placeholder={t('options.quickLinks.urlPlaceholder')}
-                    className="input-field"
-                  />
-                </div>
-                <button
-                  onClick={() => handleRemoveQuickLink(index)}
-                  className="text-red-600 hover:text-red-700 p-2 mt-1"
-                  title={t('options.quickLinks.remove')}
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
               </div>
-            ))}
 
-            {config.template.quickLinks.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">{t('options.quickLinks.empty')}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="start-time">{t('options.workDays.startTime')}</Label>
+                  <Input
+                    id="start-time"
+                    type="time"
+                    value={config.workDays.startTime}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setConfig({
+                        ...config,
+                        workDays: { ...config.workDays, startTime: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deadline">{t('options.workDays.deadline')}</Label>
+                  <Input
+                    id="deadline"
+                    type="time"
+                    value={config.workDays.deadline}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setConfig({
+                        ...config,
+                        workDays: { ...config.workDays, deadline: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="interval">{t('options.workDays.interval')}</Label>
+                  <Input
+                    id="interval"
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={config.workDays.interval}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setConfig({
+                        ...config,
+                        workDays: {
+                          ...config.workDays,
+                          interval: parseInt(e.target.value, 10) || 15,
+                        },
+                      })
+                    }
+                  />
+                  <p className="text-xs text-gray-500">{t('options.workDays.intervalHint')}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="toast-duration">{t('options.workDays.toastDuration')}</Label>
+                  <Input
+                    id="toast-duration"
+                    type="number"
+                    min={5}
+                    max={120}
+                    value={config.workDays.toastDuration}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setConfig({
+                        ...config,
+                        workDays: {
+                          ...config.workDays,
+                          toastDuration: parseInt(e.target.value, 10) || 10,
+                        },
+                      })
+                    }
+                  />
+                  <p className="text-xs text-gray-500">{t('options.workDays.toastDurationHint')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="toast-message">{t('options.workDays.toastMessage')}</Label>
+                <Textarea
+                  id="toast-message"
+                  rows={4}
+                  value={config.workDays.toastMessage || ''}
+                  placeholder={t('options.workDays.toastMessagePlaceholder')}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      workDays: { ...config.workDays, toastMessage: e.target.value },
+                    })
+                  }
+                />
+                <p className="text-xs text-gray-500">{t('options.workDays.toastMessageHint')}</p>
+              </div>
+
+              <Separator className="h-px" />
+
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label>{t('options.workDays.lateReminders')}</Label>
+                  <Button type="button" variant="secondary" size="sm" onClick={handleAddLateReminder}>
+                    <PlusIcon className="mr-1 h-4 w-4" />
+                    {t('options.workDays.addLateReminder')}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {config.workDays.lateReminders.map((time, index) => (
+                    <div key={`${time}-${index}`} className="flex items-center gap-3">
+                      <Input
+                        type="time"
+                        value={time}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleLateReminderChange(index, e.target.value)
+                        }
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => handleRemoveLateReminder(index)}
+                        title={t('options.workDays.remove')}
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <CardTitle>{t('options.template.title')}</CardTitle>
+                <CardDescription>{t('options.template.hint')}</CardDescription>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={() => handleResetTemplate()} className="gap-2">
+                <ReloadIcon className="h-4 w-4" />
+                {t('options.template.reset')}
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Label htmlFor="template-content">{t('options.template.content')}</Label>
+              <Textarea
+                id="template-content"
+                value={config.template.content}
+                onChange={(e) =>
+                  setConfig({
+                    ...config,
+                    template: { ...config.template, content: e.target.value },
+                  })
+                }
+                rows={10}
+                className="font-mono text-sm"
+                placeholder={t('options.template.placeholder')}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>{t('options.quickLinks.title')}</CardTitle>
+              <Button type="button" variant="secondary" size="sm" onClick={handleAddQuickLink} className="gap-2">
+                <PlusIcon className="h-4 w-4" />
+                {t('options.quickLinks.add')}
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {config.template.quickLinks.length === 0 && (
+                <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                  {t('options.quickLinks.empty')}
+                </div>
+              )}
+
+              {config.template.quickLinks.map((link, index) => (
+                <div
+                  key={`${link.url}-${index}`}
+                  className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[1fr_auto]"
+                >
+                  <div className="grid gap-3 md:grid-cols-2 md:gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`quick-link-name-${index}`}>{t('options.quickLinks.namePlaceholder')}</Label>
+                      <Input
+                        id={`quick-link-name-${index}`}
+                        value={link.name}
+                        placeholder={t('options.quickLinks.namePlaceholder')}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleQuickLinkChange(index, 'name', e.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`quick-link-url-${index}`}>{t('options.quickLinks.urlPlaceholder')}</Label>
+                      <Input
+                        id={`quick-link-url-${index}`}
+                        type="url"
+                        value={link.url}
+                        placeholder={t('options.quickLinks.urlPlaceholder')}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          handleQuickLinkChange(index, 'url', e.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-start justify-end md:justify-center">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => handleRemoveQuickLink(index)}
+                      title={t('options.quickLinks.remove')}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('options.other.title')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>{t('options.other.language')}</Label>
+                <Select
+                  value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
+                  onValueChange={(value) => handleLanguageChange(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="zh">中文 (Chinese)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">{t('options.other.languageHint')}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="timezone">{t('options.other.timezone')}</Label>
+                <Input id="timezone" type="text" value={config.timezone} disabled />
+                <p className="text-xs text-gray-500">{t('options.other.timezoneHint')}</p>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-wrap gap-3 pt-2 border-t border-gray-100 bg-gray-50/50 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExport}
+                className="flex-1 gap-2 border-gray-300 bg-white shadow-sm transition-all hover:bg-gray-50 hover:shadow sm:flex-initial"
+              >
+                <DownloadIcon className="h-4 w-4" />
+                {t('options.other.export')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleImport}
+                className="flex-1 gap-2 border-gray-300 bg-white shadow-sm transition-all hover:bg-gray-50 hover:shadow sm:flex-initial"
+              >
+                <UploadIcon className="h-4 w-4" />
+                {t('options.other.import')}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 shadow-lg backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+          <div className="flex-1">
+            {saved && (
+              <div className="flex items-center gap-2 text-sm font-medium text-green-600 transition-all animate-in fade-in-0 slide-in-from-bottom-2">
+                <CheckCircledIcon className="h-5 w-5 flex-shrink-0" />
+                <span>{t('options.save.success')}</span>
+              </div>
             )}
           </div>
-        </div>
-
-        {/* 其他设置 */}
-        <div className="card mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('options.other.title')}</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('options.other.timezone')}</label>
-            <input
-              type="text"
-              value={config.timezone}
-              disabled
-              className="input-field bg-gray-100 cursor-not-allowed"
-            />
-            <p className="text-xs text-gray-500 mt-1">{t('options.other.timezoneHint')}</p>
-          </div>
-
-          <div className="flex gap-2">
-            <button onClick={handleExport} className="btn-secondary">
-              <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
-              {t('options.other.export')}
-            </button>
-            <button onClick={handleImport} className="btn-secondary">
-              <svg className="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                />
-              </svg>
-              {t('options.other.import')}
-            </button>
-          </div>
-        </div>
-
-        {/* 保存按钮 */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 -mx-4 -mb-8 mt-8">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div>
-              {saved && (
-                <span className="text-green-600 text-sm font-medium flex items-center">
-                  <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {t('options.save.success')}
-                </span>
-              )}
-            </div>
-            <button onClick={handleSave} disabled={saving} className="btn-primary px-8 py-3 text-base">
-              {saving ? t('options.save.saving') : t('options.save.button')}
-            </button>
-          </div>
+          <Button type="button" size="lg" onClick={handleSave} disabled={saving} className="min-w-[140px] shadow-sm">
+            {saving && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+            {saving ? t('options.save.saving') : t('options.save.button')}
+          </Button>
         </div>
       </div>
     </div>

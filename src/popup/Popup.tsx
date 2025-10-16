@@ -91,6 +91,21 @@ const Popup: React.FC = () => {
   const isToday = state.date === new Date().toISOString().split('T')[0]
   const isTodayWorkDay = isWorkDay(new Date(), config.workDays)
 
+  // 获取距离截止时间的倒计时
+  const timeUntilDeadline = getTimeUntilDeadline(config.workDays)
+  const getDeadlineText = () => {
+    if (timeUntilDeadline.isPastDeadline) {
+      return t('popup.status.pastDeadline')
+    }
+    if (timeUntilDeadline.hours > 0) {
+      return t('popup.status.timeRemaining', {
+        hours: timeUntilDeadline.hours,
+        minutes: timeUntilDeadline.minutes,
+      })
+    }
+    return t('popup.status.minutesRemaining', { minutes: timeUntilDeadline.minutes })
+  }
+
   return (
     <div className="w-96 bg-gray-50">
       {/* 头部状态 */}
@@ -138,7 +153,7 @@ const Popup: React.FC = () => {
                   clipRule="evenodd"
                 />
               </svg>
-              {t('popup.status.pending')} · {getTimeUntilDeadline(config.workDays)}
+              {t('popup.status.pending')} · {getDeadlineText()}
             </div>
           ) : (
             <div className="flex items-center bg-gray-500 text-white px-3 py-1.5 rounded-full text-sm font-medium">
