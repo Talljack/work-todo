@@ -79,6 +79,14 @@ export function getNextReminderTime(now: Date, rule: ReminderRule, state: DailyS
 
   // 如果在开始时间和截止时间之间，计算下一个间隔提醒时间
   if (currentMinutes < deadlineMinutes) {
+    // 检查当前时间是否刚好是一个提醒时间点（在间隔点上）
+    const minutesSinceStart = currentMinutes - startMinutes
+    if (minutesSinceStart >= 0 && minutesSinceStart % rule.interval === 0) {
+      // 当前时间就是提醒时间点，返回当前时间
+      return createDateFromMinutes(currentMinutes, now)
+    }
+
+    // 否则返回下一个间隔时间点
     const nextMinutes = currentMinutes + rule.interval
     if (nextMinutes <= deadlineMinutes) {
       return createDateFromMinutes(nextMinutes, now)
@@ -87,13 +95,18 @@ export function getNextReminderTime(now: Date, rule: ReminderRule, state: DailyS
   }
 
   // 查找下一个迟到提醒时间
-  const lateReminderMinutes = rule.lateReminders
-    .map(parseTime)
-    .filter((minutes) => minutes > currentMinutes)
-    .sort((a, b) => a - b)
+  const lateReminderMinutes = rule.lateReminders.map(parseTime)
 
-  if (lateReminderMinutes.length > 0) {
-    return createDateFromMinutes(lateReminderMinutes[0], now)
+  // 首先检查当前时间是否刚好是一个迟到提醒时间点
+  if (lateReminderMinutes.includes(currentMinutes)) {
+    return createDateFromMinutes(currentMinutes, now)
+  }
+
+  // 否则查找下一个迟到提醒时间
+  const nextLateReminder = lateReminderMinutes.filter((minutes) => minutes > currentMinutes).sort((a, b) => a - b)
+
+  if (nextLateReminder.length > 0) {
+    return createDateFromMinutes(nextLateReminder[0], now)
   }
 
   // 今天没有更多提醒了
