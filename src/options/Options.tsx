@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CheckCircledIcon, DownloadIcon, PlusIcon, ReloadIcon, TrashIcon, UploadIcon } from '@radix-ui/react-icons'
+import {
+  CheckCircledIcon,
+  DownloadIcon,
+  GearIcon,
+  ReloadIcon,
+  RocketIcon,
+  UploadIcon,
+  TrashIcon,
+  ResetIcon,
+} from '@radix-ui/react-icons'
 import browser from 'webextension-polyfill'
-import type { AppConfig, QuickLink } from '@/types'
-import { DEFAULT_CONFIG, getDefaultTemplateContent, getDefaultToastMessage } from '@/types'
+import type { AppConfig } from '@/types'
+import { DEFAULT_CONFIG, getDefaultTemplateContent } from '@/types'
 import { exportConfig, getConfig, importConfig, saveConfig } from '@/utils/storage'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import Statistics from '@/components/Statistics'
+import ReminderRulesManager from '@/components/ReminderRulesManager'
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+type NavigationSection = 'general' | 'rules' | 'template' | 'statistics'
 
 const Options: React.FC = () => {
   const { t, i18n } = useTranslation()
@@ -21,13 +31,21 @@ const Options: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [activeSection, setActiveSection] = useState<NavigationSection>('general')
+  const [version, setVersion] = useState('1.0.0')
+
+  // 获取扩展版本号
+  useEffect(() => {
+    const manifest = browser.runtime.getManifest()
+    setVersion(manifest.version)
+  }, [])
 
   // 切换语言并自动更新模板
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('language', lang)
 
-    // 自动更新模板和 Toast 消息为新语言
+    // 自动更新模板为新语言
     handleResetTemplate(lang)
   }
 
@@ -35,11 +53,9 @@ const Options: React.FC = () => {
   const handleResetTemplate = (language?: string) => {
     const lang = language || i18n.language
     const defaultContent = getDefaultTemplateContent(lang)
-    const defaultMessage = getDefaultToastMessage(lang)
     setConfig({
       ...config,
       template: { ...config.template, content: defaultContent },
-      workDays: { ...config.workDays, toastMessage: defaultMessage },
     })
   }
 
@@ -117,74 +133,37 @@ const Options: React.FC = () => {
     input.click()
   }
 
-  // 更新工作日
-  const handleWorkDayChange = (index: number) => {
-    const newEnabled = [...config.workDays.enabled]
-    newEnabled[index] = !newEnabled[index]
-    setConfig({
-      ...config,
-      workDays: { ...config.workDays, enabled: newEnabled },
-    })
+  // 重置所有设置
+  const handleResetSettings = async () => {
+    if (
+      confirm(
+        t('options.reset.confirm', 'Are you sure you want to reset all settings to default? This cannot be undone.'),
+      )
+    ) {
+      try {
+        await saveConfig(DEFAULT_CONFIG)
+        setConfig(DEFAULT_CONFIG)
+        await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+        alert(t('options.reset.success', 'Settings have been reset to default'))
+      } catch (error) {
+        console.error('Failed to reset settings:', error)
+        alert(t('options.reset.error', 'Failed to reset settings'))
+      }
+    }
   }
 
-  // 添加快捷链接
-  const handleAddQuickLink = () => {
-    setConfig({
-      ...config,
-      template: {
-        ...config.template,
-        quickLinks: [...config.template.quickLinks, { name: '', url: '' }],
-      },
-    })
-  }
-
-  // 删除快捷链接
-  const handleRemoveQuickLink = (index: number) => {
-    const newLinks = config.template.quickLinks.filter((_, i) => i !== index)
-    setConfig({
-      ...config,
-      template: { ...config.template, quickLinks: newLinks },
-    })
-  }
-
-  // 更新快捷链接
-  const handleQuickLinkChange = (index: number, field: keyof QuickLink, value: string) => {
-    const newLinks = [...config.template.quickLinks]
-    newLinks[index] = { ...newLinks[index], [field]: value }
-    setConfig({
-      ...config,
-      template: { ...config.template, quickLinks: newLinks },
-    })
-  }
-
-  // 添加迟到提醒时间
-  const handleAddLateReminder = () => {
-    setConfig({
-      ...config,
-      workDays: {
-        ...config.workDays,
-        lateReminders: [...config.workDays.lateReminders, '12:00'],
-      },
-    })
-  }
-
-  // 删除迟到提醒时间
-  const handleRemoveLateReminder = (index: number) => {
-    const newReminders = config.workDays.lateReminders.filter((_, i) => i !== index)
-    setConfig({
-      ...config,
-      workDays: { ...config.workDays, lateReminders: newReminders },
-    })
-  }
-
-  // 更新迟到提醒时间
-  const handleLateReminderChange = (index: number, value: string) => {
-    const newReminders = [...config.workDays.lateReminders]
-    newReminders[index] = value
-    setConfig({
-      ...config,
-      workDays: { ...config.workDays, lateReminders: newReminders },
-    })
+  // 清除缓存（清除本地存储的状态数据）
+  const handleClearCache = async () => {
+    if (confirm(t('options.clearCache.confirm', 'Clear all cached data? This will reset daily state and history.'))) {
+      try {
+        await browser.storage.local.clear()
+        alert(t('options.clearCache.success', 'Cache cleared successfully'))
+        window.location.reload()
+      } catch (error) {
+        console.error('Failed to clear cache:', error)
+        alert(t('options.clearCache.error', 'Failed to clear cache'))
+      }
+    }
   }
 
   if (loading) {
@@ -195,331 +174,233 @@ const Options: React.FC = () => {
     )
   }
 
+  // 导航菜单项
+  const navItems: { id: NavigationSection; label: string; icon: React.ReactNode }[] = [
+    { id: 'general', label: t('options.nav.general', 'General'), icon: <GearIcon className="h-4 w-4" /> },
+    { id: 'rules', label: t('options.nav.rules', 'Reminder Rules'), icon: <RocketIcon className="h-4 w-4" /> },
+    { id: 'template', label: t('options.nav.template', 'Template'), icon: <CheckCircledIcon className="h-4 w-4" /> },
+    {
+      id: 'statistics',
+      label: t('options.nav.statistics', 'Statistics'),
+      icon: <CheckCircledIcon className="h-4 w-4" />,
+    },
+  ]
+
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-slate-50 to-white pb-40 pt-12">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 md:pb-12">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">{t('options.title')}</h1>
-          <p className="text-base text-gray-600 md:text-lg">{t('options.description')}</p>
-        </header>
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* 左侧导航栏 */}
+      <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
+        <div className="sticky top-0 p-6">
+          <div className="mb-8">
+            <h1 className="text-xl font-bold text-slate-900">Work TODO</h1>
+            <p className="text-sm text-slate-500">Reminder Settings</p>
+          </div>
 
-        <div className="grid gap-8">
-          <Card>
-            <CardHeader className="space-y-1.5">
-              <CardTitle>{t('options.workDays.title')}</CardTitle>
-              <CardDescription>{t('options.workDays.intervalHint')}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label>{t('options.workDays.selectDays')}</Label>
-                <div className="flex flex-wrap gap-2">
-                  {WEEKDAYS.map((day, index) => (
-                    <Button
-                      key={day}
-                      type="button"
-                      variant={config.workDays.enabled[index] ? 'default' : 'outline'}
-                      size="sm"
-                      className="capitalize"
-                      onClick={() => handleWorkDayChange(index)}
-                    >
-                      {t(`options.workDays.days.${day}`)}
-                    </Button>
-                  ))}
-                </div>
+          <nav className="space-y-1">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  activeSection === item.id
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-8 space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="w-full justify-start gap-2"
+            >
+              <DownloadIcon className="h-4 w-4" />
+              {t('options.other.export')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleImport}
+              className="w-full justify-start gap-2"
+            >
+              <UploadIcon className="h-4 w-4" />
+              {t('options.other.import')}
+            </Button>
+          </div>
+
+          {/* 版本号 */}
+          <div className="mt-auto pt-8 border-t border-slate-200">
+            <p className="text-xs text-slate-400 text-center">v{version}</p>
+          </div>
+        </div>
+      </aside>
+
+      {/* 右侧内容区 */}
+      <main className="flex-1 overflow-auto">
+        {/* 右上角操作按钮 */}
+        <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200">
+          <div className="mx-auto max-w-4xl px-8 py-4 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleClearCache}
+              className="gap-2 text-slate-600 hover:text-slate-900"
+            >
+              <TrashIcon className="h-4 w-4" />
+              {t('options.clearCache.button', 'Clear Cache')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResetSettings}
+              className="gap-2 text-slate-600 hover:text-red-600"
+            >
+              <ResetIcon className="h-4 w-4" />
+              {t('options.reset.button', 'Reset')}
+            </Button>
+          </div>
+        </div>
+        <div className="mx-auto max-w-4xl p-8">
+          {/* General Section */}
+          {activeSection === 'general' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.general', 'General')}</h2>
+                <p className="text-sm text-slate-500">
+                  {t('options.general.description', 'Configure general settings')}
+                </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="start-time">{t('options.workDays.startTime')}</Label>
-                  <Input
-                    id="start-time"
-                    type="time"
-                    value={config.workDays.startTime}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfig({
-                        ...config,
-                        workDays: { ...config.workDays, startTime: e.target.value },
-                      })
-                    }
-                  />
-                </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('options.other.language')}</CardTitle>
+                  <CardDescription>{t('options.other.languageHint')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Select
+                    value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
+                    onValueChange={(value) => handleLanguageChange(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="zh">中文 (Chinese)</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <div className="space-y-2">
-                  <Label htmlFor="deadline">{t('options.workDays.deadline')}</Label>
-                  <Input
-                    id="deadline"
-                    type="time"
-                    value={config.workDays.deadline}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfig({
-                        ...config,
-                        workDays: { ...config.workDays, deadline: e.target.value },
-                      })
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone">{t('options.other.timezone')}</Label>
+                    <Input id="timezone" type="text" value={config.timezone} disabled />
+                    <p className="text-xs text-slate-500">{t('options.other.timezoneHint')}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Reminder Rules Section */}
+          {activeSection === 'rules' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.rules', 'Reminder Rules')}</h2>
+                <p className="text-sm text-slate-500">
+                  {t(
+                    'options.rules.description',
+                    'Manage your reminder rules. You can create multiple rules for different purposes.',
+                  )}
+                </p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="interval">{t('options.workDays.interval')}</Label>
-                  <Input
-                    id="interval"
-                    type="number"
-                    min={1}
-                    max={60}
-                    value={config.workDays.interval}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfig({
-                        ...config,
-                        workDays: {
-                          ...config.workDays,
-                          interval: parseInt(e.target.value, 10) || 15,
-                        },
-                      })
-                    }
-                  />
-                  <p className="text-xs text-gray-500">{t('options.workDays.intervalHint')}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="toast-duration">{t('options.workDays.toastDuration')}</Label>
-                  <Input
-                    id="toast-duration"
-                    type="number"
-                    min={5}
-                    max={120}
-                    value={config.workDays.toastDuration}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfig({
-                        ...config,
-                        workDays: {
-                          ...config.workDays,
-                          toastDuration: parseInt(e.target.value, 10) || 10,
-                        },
-                      })
-                    }
-                  />
-                  <p className="text-xs text-gray-500">{t('options.workDays.toastDurationHint')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="toast-message">{t('options.workDays.toastMessage')}</Label>
-                <Textarea
-                  id="toast-message"
-                  rows={4}
-                  value={config.workDays.toastMessage || ''}
-                  placeholder={t('options.workDays.toastMessagePlaceholder')}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      workDays: { ...config.workDays, toastMessage: e.target.value },
-                    })
-                  }
-                />
-                <p className="text-xs text-gray-500">{t('options.workDays.toastMessageHint')}</p>
-              </div>
-
-              <Separator className="h-px" />
-
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Label>{t('options.workDays.lateReminders')}</Label>
-                  <Button type="button" variant="secondary" size="sm" onClick={handleAddLateReminder}>
-                    <PlusIcon className="mr-1 h-4 w-4" />
-                    {t('options.workDays.addLateReminder')}
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {config.workDays.lateReminders.map((time, index) => (
-                    <div key={`${time}-${index}`} className="flex items-center gap-3">
-                      <Input
-                        type="time"
-                        value={time}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          handleLateReminderChange(index, e.target.value)
-                        }
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={() => handleRemoveLateReminder(index)}
-                        title={t('options.workDays.remove')}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <CardTitle>{t('options.template.title')}</CardTitle>
-                <CardDescription>{t('options.template.hint')}</CardDescription>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => handleResetTemplate()} className="gap-2">
-                <ReloadIcon className="h-4 w-4" />
-                {t('options.template.reset')}
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Label htmlFor="template-content">{t('options.template.content')}</Label>
-              <Textarea
-                id="template-content"
-                value={config.template.content}
-                onChange={(e) =>
-                  setConfig({
-                    ...config,
-                    template: { ...config.template, content: e.target.value },
-                  })
-                }
-                rows={10}
-                className="font-mono text-sm"
-                placeholder={t('options.template.placeholder')}
+              <ReminderRulesManager
+                rules={config.reminderRules}
+                onChange={(rules) => setConfig({ ...config, reminderRules: rules })}
               />
-            </CardContent>
-          </Card>
+            </div>
+          )}
 
-          <Card>
-            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle>{t('options.quickLinks.title')}</CardTitle>
-              <Button type="button" variant="secondary" size="sm" onClick={handleAddQuickLink} className="gap-2">
-                <PlusIcon className="h-4 w-4" />
-                {t('options.quickLinks.add')}
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {config.template.quickLinks.length === 0 && (
-                <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
-                  {t('options.quickLinks.empty')}
+          {/* Template Section */}
+          {activeSection === 'template' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">{t('options.template.title')}</h2>
+                  <p className="text-sm text-slate-500">{t('options.template.hint')}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleResetTemplate()}
+                  className="gap-2"
+                >
+                  <ReloadIcon className="h-4 w-4" />
+                  {t('options.template.reset')}
+                </Button>
+              </div>
+
+              <Card>
+                <CardContent className="pt-6 space-y-2">
+                  <Label htmlFor="template-content">{t('options.template.content')}</Label>
+                  <Textarea
+                    id="template-content"
+                    value={config.template.content}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        template: { ...config.template, content: e.target.value },
+                      })
+                    }
+                    rows={12}
+                    className="font-mono text-sm"
+                    placeholder={t('options.template.placeholder')}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Statistics Section */}
+          {activeSection === 'statistics' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">{t('options.tabs.statistics', 'Statistics')}</h2>
+                <p className="text-sm text-slate-500">Track your completion rate and streaks</p>
+              </div>
+              <Statistics />
+            </div>
+          )}
+        </div>
+
+        {/* 固定底部保存按钮 */}
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg">
+          <div className="mx-auto max-w-4xl px-8 py-4 flex items-center justify-between">
+            <div className="flex-1">
+              {saved && (
+                <div className="flex items-center gap-2 text-sm font-medium text-green-600">
+                  <CheckCircledIcon className="h-5 w-5" />
+                  <span>{t('options.save.success')}</span>
                 </div>
               )}
-
-              {config.template.quickLinks.map((link, index) => (
-                <div
-                  key={`${link.url}-${index}`}
-                  className="grid gap-3 rounded-lg border border-gray-200 p-4 md:grid-cols-[1fr_auto]"
-                >
-                  <div className="grid gap-3 md:grid-cols-2 md:gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`quick-link-name-${index}`}>{t('options.quickLinks.namePlaceholder')}</Label>
-                      <Input
-                        id={`quick-link-name-${index}`}
-                        value={link.name}
-                        placeholder={t('options.quickLinks.namePlaceholder')}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          handleQuickLinkChange(index, 'name', e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor={`quick-link-url-${index}`}>{t('options.quickLinks.urlPlaceholder')}</Label>
-                      <Input
-                        id={`quick-link-url-${index}`}
-                        type="url"
-                        value={link.url}
-                        placeholder={t('options.quickLinks.urlPlaceholder')}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          handleQuickLinkChange(index, 'url', e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-start justify-end md:justify-center">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                      onClick={() => handleRemoveQuickLink(index)}
-                      title={t('options.quickLinks.remove')}
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('options.other.title')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>{t('options.other.language')}</Label>
-                <Select
-                  value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
-                  onValueChange={(value) => handleLanguageChange(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="zh">中文 (Chinese)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-500">{t('options.other.languageHint')}</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timezone">{t('options.other.timezone')}</Label>
-                <Input id="timezone" type="text" value={config.timezone} disabled />
-                <p className="text-xs text-gray-500">{t('options.other.timezoneHint')}</p>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-wrap gap-3 pt-2 border-t border-gray-100 bg-gray-50/50 sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleExport}
-                className="flex-1 gap-2 border-gray-300 bg-white shadow-sm transition-all hover:bg-gray-50 hover:shadow sm:flex-initial"
-              >
-                <DownloadIcon className="h-4 w-4" />
-                {t('options.other.export')}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleImport}
-                className="flex-1 gap-2 border-gray-300 bg-white shadow-sm transition-all hover:bg-gray-50 hover:shadow sm:flex-initial"
-              >
-                <UploadIcon className="h-4 w-4" />
-                {t('options.other.import')}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white/95 shadow-lg backdrop-blur-sm">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
-          <div className="flex-1">
-            {saved && (
-              <div className="flex items-center gap-2 text-sm font-medium text-green-600 transition-all animate-in fade-in-0 slide-in-from-bottom-2">
-                <CheckCircledIcon className="h-5 w-5 flex-shrink-0" />
-                <span>{t('options.save.success')}</span>
-              </div>
-            )}
+            </div>
+            <Button type="button" size="lg" onClick={handleSave} disabled={saving} className="min-w-[140px]">
+              {saving && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? t('options.save.saving') : t('options.save.button')}
+            </Button>
           </div>
-          <Button type="button" size="lg" onClick={handleSave} disabled={saving} className="min-w-[140px] shadow-sm">
-            {saving && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
-            {saving ? t('options.save.saving') : t('options.save.button')}
-          </Button>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

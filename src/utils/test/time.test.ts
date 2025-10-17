@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { parseTime, formatTime, isWorkDay, shouldResetState, getCurrentMinutes, createDateFromMinutes } from '../time'
-import type { WorkDayConfig } from '@/types'
+import type { ReminderRule } from '@/types'
 
 describe('Time Utils', () => {
   describe('parseTime', () => {
@@ -39,34 +39,40 @@ describe('Time Utils', () => {
   })
 
   describe('isWorkDay', () => {
-    const config: WorkDayConfig = {
-      enabled: [true, true, true, true, true, false, false], // Mon-Fri
+    const rule: ReminderRule = {
+      id: 'test-rule',
+      name: 'Test Rule',
+      enabled: true,
+      workDays: [true, true, true, true, true, false, false], // Mon-Fri
       startTime: '09:00',
       interval: 15,
       deadline: '10:00',
       lateReminders: [],
+      notificationTitle: 'Test Title',
+      notificationMessage: 'Test Message',
+      toastMessage: 'Test Toast',
       toastDuration: 30,
-      toastMessage: 'Test message',
+      toastClickUrl: '',
     }
 
     test('should return true for workdays', () => {
       // Monday (2025-10-13)
       const monday = new Date('2025-10-13T10:00:00')
-      expect(isWorkDay(monday, config)).toBe(true)
+      expect(isWorkDay(monday, rule)).toBe(true)
 
       // Friday (2025-10-17)
       const friday = new Date('2025-10-17T10:00:00')
-      expect(isWorkDay(friday, config)).toBe(true)
+      expect(isWorkDay(friday, rule)).toBe(true)
     })
 
     test('should return false for weekends', () => {
       // Saturday (2025-10-18)
       const saturday = new Date('2025-10-18T10:00:00')
-      expect(isWorkDay(saturday, config)).toBe(false)
+      expect(isWorkDay(saturday, rule)).toBe(false)
 
       // Sunday (2025-10-19)
       const sunday = new Date('2025-10-19T10:00:00')
-      expect(isWorkDay(sunday, config)).toBe(false)
+      expect(isWorkDay(sunday, rule)).toBe(false)
     })
   })
 

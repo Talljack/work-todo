@@ -41,13 +41,15 @@ function initToastContainer() {
 
 // 监听来自后台的消息
 browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  const msg = message as { type: string; message?: string; duration?: number }
+  const msg = message as { type: string; message?: string; duration?: number; url?: string }
 
   if (msg.type === 'SHOW_TOAST') {
     initToastContainer()
 
     // 获取持续时间（默认 30 秒）
     const duration = msg.duration || 30000
+    // 获取点击后要打开的 URL（可选）
+    const targetUrl = msg.url
 
     // 显示自定义 toast
     toast.custom(
@@ -56,7 +58,12 @@ browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) 
           'div',
           {
             onClick: () => {
-              browser.runtime.sendMessage({ type: 'OPEN_OPTIONS' })
+              // 如果提供了 URL，则打开该 URL；否则打开 Options 页面
+              if (targetUrl) {
+                window.open(targetUrl, '_blank')
+              } else {
+                browser.runtime.sendMessage({ type: 'OPEN_OPTIONS' })
+              }
               toast.dismiss(t.id)
             },
             style: {
