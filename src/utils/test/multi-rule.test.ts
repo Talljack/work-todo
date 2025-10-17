@@ -1,5 +1,5 @@
-import { describe, expect, test, vi } from 'vitest'
-import type { AppConfig, ReminderRule, DailyState } from '@/types'
+import { describe, expect, test } from 'vitest'
+import type { ReminderRule, DailyState } from '@/types'
 import { getNextReminderTime, isWorkDay } from '@/utils/time'
 
 describe('Multi-Rule System Tests', () => {

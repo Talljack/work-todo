@@ -5,7 +5,6 @@ import {
   DEFAULT_CONFIG,
   DEFAULT_DAILY_STATE,
   getDefaultTemplateContent,
-  getDefaultToastMessage,
   createDefaultReminderRule,
 } from '@/types'
 
@@ -37,7 +36,9 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     console.log('[migrateConfig] Migrating from v3 to v4')
 
     const migratedRules = oldConfig.reminderRules.map((rule) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const oldQuickLinks = (rule as any).quickLinks || []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
       const { quickLinks, ...ruleWithoutQuickLinks } = rule as any
 
       return {
@@ -63,6 +64,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
   if (oldConfig.version === 2 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     console.log('[migrateConfig] Migrating from v2 to v4')
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalQuickLinks = (oldConfig.template as any)?.quickLinks || []
 
     const migratedRules = oldConfig.reminderRules.map((rule) => {
@@ -89,6 +91,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
 
   if (oldConfig.workDays) {
     const oldWorkDays = oldConfig.workDays as WorkDayConfig
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalQuickLinks = (oldConfig.template as any)?.quickLinks || []
 
     reminderRules.push({

@@ -3,7 +3,7 @@
  * 运行方式: node --loader tsx test-multi-rules.ts
  */
 
-import { getNextReminderTime, isWorkDay, parseTime } from '../src/utils/time'
+import { getNextReminderTime, isWorkDay } from '../src/utils/time'
 import type { ReminderRule, DailyState } from '../src/types'
 
 // 模拟规则

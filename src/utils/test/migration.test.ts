@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import type { AppConfig, WorkDayConfig, ReminderRule } from '@/types'
 import { DEFAULT_CONFIG } from '@/types'
 
@@ -20,7 +20,9 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
   // v3 -> v4: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
   if (oldConfig.version === 3 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     const migratedRules = oldConfig.reminderRules.map((rule) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const oldQuickLinks = (rule as any).quickLinks || []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
       const { quickLinks, ...ruleWithoutQuickLinks } = rule as any
 
       return {
@@ -41,6 +43,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
 
   // v2 -> v4: 将 template.quickLinks 迁移到 toastClickUrl
   if (oldConfig.version === 2 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalQuickLinks = (oldConfig.template as any)?.quickLinks || []
 
     const migratedRules = oldConfig.reminderRules.map((rule) => {
@@ -65,6 +68,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
 
   if (oldConfig.workDays) {
     const oldWorkDays = oldConfig.workDays as WorkDayConfig
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalQuickLinks = (oldConfig.template as any)?.quickLinks || []
 
     reminderRules.push({
