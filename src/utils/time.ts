@@ -1,14 +1,14 @@
-import type { WorkDayConfig, DailyState } from '@/types'
+import type { ReminderRule, DailyState } from '@/types'
 
 /**
  * 判断指定日期是否为工作日
  */
-export function isWorkDay(date: Date, config: WorkDayConfig): boolean {
+export function isWorkDay(date: Date, rule: ReminderRule): boolean {
   const dayOfWeek = date.getDay()
   // JavaScript 的 getDay() 返回 0-6，0 是周日
   // 我们的配置是 [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
   const configIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-  return config.enabled[configIndex]
+  return rule.workDays[configIndex]
 }
 
 /**
@@ -61,16 +61,16 @@ export function shouldResetState(lastDate: string): boolean {
  * 计算下次提醒时间
  * 返回 null 表示今天不需要再提醒
  */
-export function getNextReminderTime(now: Date, config: WorkDayConfig, state: DailyState): Date | null {
+export function getNextReminderTime(now: Date, rule: ReminderRule, state: DailyState): Date | null {
   // 如果已发送，不再提醒
   if (state.sent) return null
 
   // 如果不是工作日，不提醒
-  if (!isWorkDay(now, config)) return null
+  if (!isWorkDay(now, rule)) return null
 
   const currentMinutes = getCurrentMinutes(now)
-  const startMinutes = parseTime(config.startTime)
-  const deadlineMinutes = parseTime(config.deadline)
+  const startMinutes = parseTime(rule.startTime)
+  const deadlineMinutes = parseTime(rule.deadline)
 
   // 如果还没到开始时间，返回开始时间
   if (currentMinutes < startMinutes) {
@@ -79,7 +79,15 @@ export function getNextReminderTime(now: Date, config: WorkDayConfig, state: Dai
 
   // 如果在开始时间和截止时间之间，计算下一个间隔提醒时间
   if (currentMinutes < deadlineMinutes) {
-    const nextMinutes = currentMinutes + config.interval
+    // 检查当前时间是否刚好是一个提醒时间点（在间隔点上）
+    const minutesSinceStart = currentMinutes - startMinutes
+    if (minutesSinceStart >= 0 && minutesSinceStart % rule.interval === 0) {
+      // 当前时间就是提醒时间点，返回当前时间
+      return createDateFromMinutes(currentMinutes, now)
+    }
+
+    // 否则返回下一个间隔时间点
+    const nextMinutes = currentMinutes + rule.interval
     if (nextMinutes <= deadlineMinutes) {
       return createDateFromMinutes(nextMinutes, now)
     }
@@ -87,13 +95,18 @@ export function getNextReminderTime(now: Date, config: WorkDayConfig, state: Dai
   }
 
   // 查找下一个迟到提醒时间
-  const lateReminderMinutes = config.lateReminders
-    .map(parseTime)
-    .filter((minutes) => minutes > currentMinutes)
-    .sort((a, b) => a - b)
+  const lateReminderMinutes = rule.lateReminders.map(parseTime)
 
-  if (lateReminderMinutes.length > 0) {
-    return createDateFromMinutes(lateReminderMinutes[0], now)
+  // 首先检查当前时间是否刚好是一个迟到提醒时间点
+  if (lateReminderMinutes.includes(currentMinutes)) {
+    return createDateFromMinutes(currentMinutes, now)
+  }
+
+  // 否则查找下一个迟到提醒时间
+  const nextLateReminder = lateReminderMinutes.filter((minutes) => minutes > currentMinutes).sort((a, b) => a - b)
+
+  if (nextLateReminder.length > 0) {
+    return createDateFromMinutes(nextLateReminder[0], now)
   }
 
   // 今天没有更多提醒了
@@ -103,21 +116,21 @@ export function getNextReminderTime(now: Date, config: WorkDayConfig, state: Dai
 /**
  * 获取所有今日提醒时间点
  */
-export function getTodayReminderTimes(config: WorkDayConfig): Date[] {
+export function getTodayReminderTimes(rule: ReminderRule): Date[] {
   const now = new Date()
-  if (!isWorkDay(now, config)) return []
+  if (!isWorkDay(now, rule)) return []
 
   const times: Date[] = []
-  const startMinutes = parseTime(config.startTime)
-  const deadlineMinutes = parseTime(config.deadline)
+  const startMinutes = parseTime(rule.startTime)
+  const deadlineMinutes = parseTime(rule.deadline)
 
   // 添加常规提醒时间
-  for (let minutes = startMinutes; minutes <= deadlineMinutes; minutes += config.interval) {
+  for (let minutes = startMinutes; minutes <= deadlineMinutes; minutes += rule.interval) {
     times.push(createDateFromMinutes(minutes, now))
   }
 
   // 添加迟到提醒时间
-  config.lateReminders.forEach((timeStr) => {
+  rule.lateReminders.forEach((timeStr) => {
     const minutes = parseTime(timeStr)
     if (minutes > deadlineMinutes) {
       times.push(createDateFromMinutes(minutes, now))
@@ -141,13 +154,13 @@ export function getNextMidnight(): Date {
  * 计算距离截止时间还有多久
  * 返回结构化数据，便于国际化
  */
-export function getTimeUntilDeadline(config: WorkDayConfig): {
+export function getTimeUntilDeadline(rule: ReminderRule): {
   isPastDeadline: boolean
   hours: number
   minutes: number
 } {
   const now = new Date()
-  const deadlineMinutes = parseTime(config.deadline)
+  const deadlineMinutes = parseTime(rule.deadline)
   const deadline = createDateFromMinutes(deadlineMinutes, now)
 
   if (now > deadline) {

@@ -18,7 +18,6 @@ const resources = {
       'popup.template.title': 'TODO Template',
       'popup.template.copy': 'Copy',
       'popup.template.copied': 'Copied!',
-      'popup.quickLinks.title': 'Quick Links',
       'popup.actions.markSent': 'Mark as Sent',
 
       // Options
@@ -50,12 +49,6 @@ const resources = {
       'options.template.placeholder': 'Enter your TODO template...',
       'options.template.hint': 'This template will be used in the popup for easy copying',
       'options.template.reset': 'Reset to Default',
-      'options.quickLinks.title': 'Quick Links',
-      'options.quickLinks.add': 'Add Link',
-      'options.quickLinks.namePlaceholder': 'Link Name',
-      'options.quickLinks.urlPlaceholder': 'https://...',
-      'options.quickLinks.remove': 'Remove',
-      'options.quickLinks.empty': 'No quick links yet. Click "Add Link" to create one.',
       'options.other.title': 'Other Settings',
       'options.other.language': 'Language',
       'options.other.languageHint': 'Changing language will automatically update template and toast message',
@@ -87,7 +80,6 @@ const resources = {
       'popup.template.title': 'TODO 模板',
       'popup.template.copy': '复制',
       'popup.template.copied': '已复制！',
-      'popup.quickLinks.title': '快捷链接',
       'popup.actions.markSent': '标记已发送',
 
       // Options
@@ -119,12 +111,6 @@ const resources = {
       'options.template.placeholder': '输入您的 TODO 模板...',
       'options.template.hint': '此模板将在弹窗中显示，方便一键复制',
       'options.template.reset': '重置为默认',
-      'options.quickLinks.title': '快捷链接',
-      'options.quickLinks.add': '添加链接',
-      'options.quickLinks.namePlaceholder': '链接名称',
-      'options.quickLinks.urlPlaceholder': 'https://...',
-      'options.quickLinks.remove': '删除',
-      'options.quickLinks.empty': '还没有快捷链接。点击"添加链接"创建一个。',
       'options.other.title': '其他设置',
       'options.other.language': '语言',
       'options.other.languageHint': '切换语言会自动更新模板和提醒消息',

@@ -67,11 +67,6 @@ const Popup: React.FC = () => {
     browser.runtime.openOptionsPage()
   }
 
-  // 打开快捷链接
-  const handleOpenLink = (url: string) => {
-    browser.tabs.create({ url })
-  }
-
   if (loading) {
     return (
       <div className="w-96 p-6 flex items-center justify-center">
@@ -89,10 +84,19 @@ const Popup: React.FC = () => {
   }
 
   const isToday = state.date === new Date().toISOString().split('T')[0]
-  const isTodayWorkDay = isWorkDay(new Date(), config.workDays)
 
-  // 获取距离截止时间的倒计时
-  const timeUntilDeadline = getTimeUntilDeadline(config.workDays)
+  // 检查今天是否是工作日（任意一个启用的规则将今天设为工作日即可）
+  const isTodayWorkDay = config.reminderRules.some((rule) => {
+    if (!rule.enabled) return false
+    return isWorkDay(new Date(), rule)
+  })
+
+  // 获取第一个启用规则的截止时间
+  const firstEnabledRule = config.reminderRules.find((rule) => rule.enabled)
+  const timeUntilDeadline = firstEnabledRule
+    ? getTimeUntilDeadline(firstEnabledRule)
+    : { isPastDeadline: true, hours: 0, minutes: 0 }
+
   const getDeadlineText = () => {
     if (timeUntilDeadline.isPastDeadline) {
       return t('popup.status.pastDeadline')
@@ -210,37 +214,6 @@ const Popup: React.FC = () => {
             {config.template.content}
           </pre>
         </div>
-
-        {/* 快捷链接 */}
-        {config.template.quickLinks.length > 0 && (
-          <div className="card">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">{t('popup.quickLinks.title')}</h2>
-            <div className="space-y-2">
-              {config.template.quickLinks.map((link, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleOpenLink(link.url)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-gray-50 hover:bg-gray-100 rounded border border-gray-200 transition-colors"
-                >
-                  <span className="truncate">{link.name}</span>
-                  <svg
-                    className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* 操作按钮 */}
         <div className="space-y-2">

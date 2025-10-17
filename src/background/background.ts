@@ -34,18 +34,33 @@ async function initAlarms(): Promise<void> {
 
 /**
  * 安排下一次提醒
+ * 遍历所有启用的规则，找出最早的下一次提醒时间
  */
 async function scheduleNextReminder(): Promise<void> {
   const config = await getConfig()
   const state = await getDailyState()
   const now = new Date()
 
-  const nextTime = getNextReminderTime(now, config.workDays, state)
+  let earliestTime: Date | null = null
+  let earliestRule: string | null = null
 
-  if (nextTime) {
-    const when = nextTime.getTime()
+  // 遍历所有启用的规则，找出最早的提醒时间
+  for (const rule of config.reminderRules) {
+    if (!rule.enabled) continue
+
+    const nextTime = getNextReminderTime(now, rule, state)
+    if (nextTime) {
+      if (!earliestTime || nextTime < earliestTime) {
+        earliestTime = nextTime
+        earliestRule = rule.name
+      }
+    }
+  }
+
+  if (earliestTime && earliestRule) {
+    const when = earliestTime.getTime()
     await browser.alarms.create(ALARM_NAMES.REMINDER, { when })
-    console.log(`Next reminder scheduled at: ${nextTime.toLocaleString()}`)
+    console.log(`Next reminder scheduled at: ${earliestTime.toLocaleString()} for rule: ${earliestRule}`)
   } else {
     console.log('No more reminders for today')
   }
@@ -64,51 +79,75 @@ async function scheduleMidnightReset(): Promise<void> {
 
 /**
  * 处理提醒
+ * 检查所有启用的规则，触发当前时间应该提醒的规则
  */
 async function handleReminder(): Promise<void> {
-  const state = await getDailyState()
+  // 首先清除所有现有的提醒闹钟，防止休眠后积压的闹钟重复触发
+  await browser.alarms.clear(ALARM_NAMES.REMINDER)
 
-  // 已发送则跳过
+  const state = await getDailyState()
+  const config = await getConfig()
+  const now = new Date()
+
+  // 已发送则跳过，直接安排下一次（如果有的话）
   if (state.sent) {
     console.log('Already sent today, skipping reminder')
+    await scheduleNextReminder()
     return
   }
 
-  console.log('Triggering reminder...')
-
-  // 1. 发送系统通知
-  await browser.notifications.create({
-    type: 'basic',
-    iconUrl: 'src/assets/icon.png',
-    title: '提醒：发送今日 TODO',
-    message: '别忘了发送今日工作计划！点击打开扩展。',
-    priority: 2,
+  // 找出当前时间应该提醒的所有规则
+  const rulesToRemind = config.reminderRules.filter((rule) => {
+    if (!rule.enabled) return false
+    const nextTime = getNextReminderTime(now, rule, state)
+    // 如果下一次提醒时间在1分钟内，认为应该现在提醒
+    return nextTime && nextTime.getTime() - now.getTime() <= 60000
   })
 
-  // 2. 更新 Badge
+  if (rulesToRemind.length === 0) {
+    console.log('No rules to remind at this time')
+    await scheduleNextReminder()
+    return
+  }
+
+  console.log(`Triggering reminder for ${rulesToRemind.length} rule(s)...`)
+
+  // 为每个规则发送通知和Toast
+  for (const rule of rulesToRemind) {
+    // 1. 发送系统通知
+    await browser.notifications.create({
+      type: 'basic',
+      iconUrl: 'src/assets/icon.png',
+      title: rule.notificationTitle,
+      message: rule.notificationMessage,
+      priority: 2,
+    })
+
+    // 2. 在所有活动标签页显示 Toast 提醒
+    try {
+      const tabs = await browser.tabs.query({ active: true })
+      for (const tab of tabs) {
+        if (tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+          await browser.tabs
+            .sendMessage(tab.id, {
+              type: 'SHOW_TOAST',
+              message: rule.toastMessage,
+              duration: rule.toastDuration * 1000, // 转换为毫秒
+              url: rule.toastClickUrl, // 可选的点击后打开的 URL
+            })
+            .catch(() => {
+              // 忽略无法注入的页面（如 chrome:// 页面）
+            })
+        }
+      }
+    } catch (error) {
+      console.log('Failed to show toast:', error)
+    }
+  }
+
+  // 3. 更新 Badge
   await browser.action.setBadgeText({ text: '!' })
   await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
-
-  // 3. 在所有活动标签页显示 Toast 提醒
-  try {
-    const config = await getConfig()
-    const tabs = await browser.tabs.query({ active: true })
-    for (const tab of tabs) {
-      if (tab.id && tab.url && !tab.url.startsWith('chrome://')) {
-        await browser.tabs
-          .sendMessage(tab.id, {
-            type: 'SHOW_TOAST',
-            message: config.workDays.toastMessage,
-            duration: config.workDays.toastDuration * 1000, // 转换为毫秒
-          })
-          .catch(() => {
-            // 忽略无法注入的页面（如 chrome:// 页面）
-          })
-      }
-    }
-  } catch (error) {
-    console.log('Failed to show toast:', error)
-  }
 
   // 4. 安排下一次提醒
   await scheduleNextReminder()
@@ -211,6 +250,32 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
 onConfigChanged(async () => {
   console.log('Config changed, reinitializing alarms...')
   await initAlarms()
+})
+
+// 监听键盘快捷键命令
+browser.commands.onCommand.addListener(async (command) => {
+  console.log('Command received:', command)
+
+  switch (command) {
+    case 'mark-as-sent':
+      await handleMarkAsSent()
+      // 显示通知确认
+      await browser.notifications.create({
+        type: 'basic',
+        iconUrl: 'src/assets/icon.png',
+        title: '✅ 已标记为已发送',
+        message: '今日 TODO 已标记为已发送',
+        priority: 1,
+      })
+      break
+
+    case 'open-options':
+      await browser.runtime.openOptionsPage()
+      break
+
+    default:
+      console.log('Unknown command:', command)
+  }
 })
 
 console.log('Background service worker loaded')
