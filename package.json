@@ -77,7 +77,7 @@
       "prettier --write --cache --ignore-unknown",
       "eslint --cache --fix"
     ],
-    "*.{css,scss,less,md,html,json}": [
+    "*.{css,scss,less,md,html,json,yaml,yml}": [
       "prettier --write --cache --ignore-unknown"
     ]
   }
