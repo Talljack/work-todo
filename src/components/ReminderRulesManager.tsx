@@ -19,6 +19,17 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
   const { t } = useTranslation()
   const [editingRule, setEditingRule] = useState<ReminderRule | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set()) // 跟踪展开的规则
+
+  const toggleRuleExpand = (ruleId: string) => {
+    const newExpanded = new Set(expandedRules)
+    if (newExpanded.has(ruleId)) {
+      newExpanded.delete(ruleId)
+    } else {
+      newExpanded.add(ruleId)
+    }
+    setExpandedRules(newExpanded)
+  }
 
   const handleAddRule = () => {
     setEditingRule(null)
@@ -117,7 +128,7 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
                       checked={rule.enabled}
                       onCheckedChange={(checked) => handleToggleEnabled(rule.id, checked)}
                     />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold text-slate-900">{rule.name}</h3>
                       <p className="text-sm text-slate-500 mt-1">
                         {rule.startTime} - {rule.deadline} · {t('options.rules.interval', 'Every')} {rule.interval}{' '}
@@ -126,6 +137,23 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleRuleExpand(rule.id)}
+                      className="text-slate-600 hover:text-slate-900"
+                      title={expandedRules.has(rule.id) ? 'Collapse' : 'Expand'}
+                    >
+                      <svg
+                        className={`h-5 w-5 transition-transform ${expandedRules.has(rule.id) ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </Button>
                     <Button
                       type="button"
                       variant="ghost"
@@ -149,7 +177,7 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
                   </div>
                 </div>
 
-                {/* Work Days */}
+                {/* Work Days - Always visible */}
                 <div className="mb-4">
                   <p className="text-sm text-slate-600">
                     <span className="font-medium">{t('options.rules.workDays', 'Work Days')}:</span>{' '}
@@ -157,87 +185,92 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
                   </p>
                 </div>
 
-                {/* Notification Settings */}
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="text-sm font-semibold text-slate-700 mb-3">
-                    {t('options.rules.notifications', 'Notification Settings')}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="text-xs font-medium text-slate-500 mb-1">
-                        {t('options.rules.notificationTitle', 'Title')}
-                      </div>
-                      <div className="text-sm text-slate-800">{rule.notificationTitle}</div>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="text-xs font-medium text-slate-500 mb-1">
-                        {t('options.rules.notificationMessage', 'Message')}
-                      </div>
-                      <div className="text-sm text-slate-800">{rule.notificationMessage}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Toast Settings */}
-                <div className="mt-4 pt-4 border-t">
-                  <h4 className="text-sm font-semibold text-slate-700 mb-3">
-                    {t('options.rules.toast', 'Toast Settings')}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="text-xs font-medium text-slate-500 mb-1">
-                        {t('options.rules.toastMessage', 'Toast Message')}
-                      </div>
-                      <div className="text-sm text-slate-800">{rule.toastMessage}</div>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <div className="text-xs font-medium text-slate-500 mb-1">
-                        {t('options.rules.toastDuration', 'Duration')}
-                      </div>
-                      <div className="text-sm text-slate-800">
-                        {rule.toastDuration} {t('options.rules.seconds', 'seconds')}
-                      </div>
-                    </div>
-                    {rule.toastClickUrl && (
-                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 md:col-span-2">
-                        <div className="text-xs font-medium text-slate-500 mb-1">
-                          {t('options.rules.toastClickUrl', 'Click URL')}
+                {/* Detailed info - Collapsible */}
+                {expandedRules.has(rule.id) && (
+                  <>
+                    {/* Notification Settings */}
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="text-sm font-semibold text-slate-700 mb-3">
+                        {t('options.rules.notifications', 'Notification Settings')}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                          <div className="text-xs font-medium text-slate-500 mb-1">
+                            {t('options.rules.notificationTitle', 'Title')}
+                          </div>
+                          <div className="text-sm text-slate-800">{rule.notificationTitle}</div>
                         </div>
-                        <div className="text-sm text-slate-800 truncate">{rule.toastClickUrl}</div>
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                          <div className="text-xs font-medium text-slate-500 mb-1">
+                            {t('options.rules.notificationMessage', 'Message')}
+                          </div>
+                          <div className="text-sm text-slate-800">{rule.notificationMessage}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Toast Settings */}
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="text-sm font-semibold text-slate-700 mb-3">
+                        {t('options.rules.toast', 'Toast Settings')}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                          <div className="text-xs font-medium text-slate-500 mb-1">
+                            {t('options.rules.toastMessage', 'Toast Message')}
+                          </div>
+                          <div className="text-sm text-slate-800">{rule.toastMessage}</div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                          <div className="text-xs font-medium text-slate-500 mb-1">
+                            {t('options.rules.toastDuration', 'Duration')}
+                          </div>
+                          <div className="text-sm text-slate-800">
+                            {rule.toastDuration} {t('options.rules.seconds', 'seconds')}
+                          </div>
+                        </div>
+                        {rule.toastClickUrl && (
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 md:col-span-2">
+                            <div className="text-xs font-medium text-slate-500 mb-1">
+                              {t('options.rules.toastClickUrl', 'Click URL')}
+                            </div>
+                            <div className="text-sm text-slate-800 truncate">{rule.toastClickUrl}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Late Reminders */}
+                    {rule.lateReminders && rule.lateReminders.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                          {t('options.rules.lateReminders', 'Late Reminders')}
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {rule.lateReminders.map((time, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
+                            >
+                              {time}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                  </div>
-                </div>
 
-                {/* Late Reminders */}
-                {rule.lateReminders && rule.lateReminders.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-2">
-                      {t('options.rules.lateReminders', 'Late Reminders')}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {rule.lateReminders.map((time, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
-                        >
-                          {time}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Template Content */}
-                {rule.templateContent && (
-                  <div className="mt-4 pt-4 border-t">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-2">
-                      {t('options.rules.templateContent', 'Template Content')}
-                    </h4>
-                    <div className="prose prose-sm max-w-none bg-slate-50 p-4 rounded-lg border border-slate-200">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{rule.templateContent}</ReactMarkdown>
-                    </div>
-                  </div>
+                    {/* Template Content */}
+                    {rule.templateContent && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                          {t('options.rules.templateContent', 'Template Content')}
+                        </h4>
+                        <div className="prose prose-sm max-w-none bg-slate-50 p-4 rounded-lg border border-slate-200">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{rule.templateContent}</ReactMarkdown>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>

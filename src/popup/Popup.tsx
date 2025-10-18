@@ -119,14 +119,49 @@ const Popup: React.FC = () => {
   // 获取今天激活的规则（用于显示规则信息，不受sent状态影响）
   const getTodayActiveRule = (): ReminderRule | null => {
     const now = new Date()
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
     // 找出今天启用的、符合工作日设置的规则
     for (const rule of config.reminderRules) {
       if (!rule.enabled) continue
       if (!isWorkDay(now, rule)) continue
 
-      // 如果当前时间在规则的时间范围内（开始时间到最后一个迟到提醒）
-      return rule
+      // 解析规则的时间
+      const [startHour, startMin] = rule.startTime.split(':').map(Number)
+      const [deadlineHour, deadlineMin] = rule.deadline.split(':').map(Number)
+      const startMinutes = startHour * 60 + startMin
+      let deadlineMinutes = deadlineHour * 60 + deadlineMin
+
+      // 处理跨午夜情况（例如 23:30 - 00:30）
+      if (deadlineMinutes < startMinutes) {
+        deadlineMinutes += 24 * 60
+      }
+
+      // 检查当前时间是否在开始时间之后
+      let adjustedCurrentMinutes = currentMinutes
+      if (currentMinutes < startMinutes && deadlineMinutes >= 24 * 60) {
+        // 如果当前时间在午夜后，且规则跨午夜，需要调整
+        adjustedCurrentMinutes += 24 * 60
+      }
+
+      // 检查是否在活动时间范围内（包括迟到提醒时间）
+      const lateReminders = rule.lateReminders || []
+      let latestMinutes = deadlineMinutes
+
+      if (lateReminders.length > 0) {
+        // 找到最晚的迟到提醒时间
+        const lateMinutes = lateReminders.map((time) => {
+          const [h, m] = time.split(':').map(Number)
+          let mins = h * 60 + m
+          if (mins < startMinutes) mins += 24 * 60 // 跨午夜
+          return mins
+        })
+        latestMinutes = Math.max(deadlineMinutes, ...lateMinutes)
+      }
+
+      if (adjustedCurrentMinutes >= startMinutes && adjustedCurrentMinutes <= latestMinutes) {
+        return rule
+      }
     }
 
     return null
