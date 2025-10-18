@@ -14,6 +14,7 @@ const Popup: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [isRuleDetailsExpanded, setIsRuleDetailsExpanded] = useState(false) // 规则详情折叠状态，默认折叠
 
   // 加载配置和状态
   useEffect(() => {
@@ -233,45 +234,68 @@ const Popup: React.FC = () => {
         {/* 当前激活的规则信息 */}
         {todayActiveRule && (
           <div className="card">
-            <div className="mb-3">
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
-              <div className="text-lg font-bold text-primary-700">{todayActiveRule.name}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                {todayActiveRule.startTime} - {todayActiveRule.deadline} · Every {todayActiveRule.interval} min
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
+                <div className="text-lg font-bold text-primary-700">{todayActiveRule.name}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {todayActiveRule.startTime} - {todayActiveRule.deadline} · Every {todayActiveRule.interval} min
+                </div>
               </div>
+              <button
+                onClick={() => setIsRuleDetailsExpanded(!isRuleDetailsExpanded)}
+                className="ml-2 text-gray-500 hover:text-gray-700 transition-colors p-1"
+                title={isRuleDetailsExpanded ? 'Collapse' : 'Expand'}
+              >
+                <svg
+                  className={`w-5 h-5 transition-transform ${isRuleDetailsExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
 
-            {/* 通知设置 */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="text-xs font-semibold text-gray-600 mb-2">
-                {t('popup.notificationSettings', 'Notification Settings')}
-              </h3>
-              <div className="space-y-2">
-                <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                  <div className="text-xs font-medium text-gray-500 mb-1">Title</div>
-                  <div className="text-sm text-gray-800">{todayActiveRule.notificationTitle}</div>
+            {/* 详细信息 - 只在展开时显示 */}
+            {isRuleDetailsExpanded && (
+              <>
+                {/* 通知设置 */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-xs font-semibold text-gray-600 mb-2">
+                    {t('popup.notificationSettings', 'Notification Settings')}
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Title</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.notificationTitle}</div>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.notificationMessage}</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                  <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
-                  <div className="text-sm text-gray-800">{todayActiveRule.notificationMessage}</div>
-                </div>
-              </div>
-            </div>
 
-            {/* Toast设置 */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="text-xs font-semibold text-gray-600 mb-2">{t('popup.toastSettings', 'Toast Settings')}</h3>
-              <div className="space-y-2">
-                <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                  <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
-                  <div className="text-sm text-gray-800">{todayActiveRule.toastMessage}</div>
+                {/* Toast设置 */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-xs font-semibold text-gray-600 mb-2">
+                    {t('popup.toastSettings', 'Toast Settings')}
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.toastMessage}</div>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Duration</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.toastDuration}s</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                  <div className="text-xs font-medium text-gray-500 mb-1">Duration</div>
-                  <div className="text-sm text-gray-800">{todayActiveRule.toastDuration}s</div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         )}
 
