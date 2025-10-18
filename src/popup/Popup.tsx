@@ -94,6 +94,7 @@ const Popup: React.FC = () => {
   })
 
   // 获取即将触发的规则（下一个提醒时间最早的规则）
+  // 用于确定提醒时间和Mark as Done按钮
   const getNextActiveRule = (): ReminderRule | null => {
     const now = new Date()
     let earliestTime: Date | null = null
@@ -114,11 +115,27 @@ const Popup: React.FC = () => {
     return earliestRule
   }
 
+  // 获取今天激活的规则（用于显示规则信息，不受sent状态影响）
+  const getTodayActiveRule = (): ReminderRule | null => {
+    const now = new Date()
+
+    // 找出今天启用的、符合工作日设置的规则
+    for (const rule of config.reminderRules) {
+      if (!rule.enabled) continue
+      if (!isWorkDay(now, rule)) continue
+
+      // 如果当前时间在规则的时间范围内（开始时间到最后一个迟到提醒）
+      return rule
+    }
+
+    return null
+  }
+
   // 获取要显示的模板内容
   const getTemplateContent = (): string => {
-    const activeRule = getNextActiveRule()
+    const activeRule = getTodayActiveRule()
 
-    // 如果有即将触发的规则且该规则有自定义模板，使用规则的模板
+    // 如果有今天激活的规则且该规则有自定义模板，使用规则的模板
     if (activeRule?.templateContent) {
       return activeRule.templateContent
     }
@@ -129,6 +146,7 @@ const Popup: React.FC = () => {
 
   // 获取今天会触发的规则的截止时间（必须是今天的工作日）
   const nextActiveRule = getNextActiveRule()
+  const todayActiveRule = getTodayActiveRule() // 用于显示规则信息
   const timeUntilDeadline = nextActiveRule
     ? getTimeUntilDeadline(nextActiveRule)
     : { isPastDeadline: true, hours: 0, minutes: 0 }
@@ -213,13 +231,13 @@ const Popup: React.FC = () => {
       {/* 主体内容 */}
       <div className="p-6 space-y-4">
         {/* 当前激活的规则信息 */}
-        {nextActiveRule && (
+        {todayActiveRule && (
           <div className="card">
             <div className="mb-3">
               <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
-              <div className="text-lg font-bold text-primary-700">{nextActiveRule.name}</div>
+              <div className="text-lg font-bold text-primary-700">{todayActiveRule.name}</div>
               <div className="text-xs text-gray-500 mt-1">
-                {nextActiveRule.startTime} - {nextActiveRule.deadline} · Every {nextActiveRule.interval} min
+                {todayActiveRule.startTime} - {todayActiveRule.deadline} · Every {todayActiveRule.interval} min
               </div>
             </div>
 
@@ -231,11 +249,26 @@ const Popup: React.FC = () => {
               <div className="space-y-2">
                 <div className="bg-gray-50 p-3 rounded border border-gray-200">
                   <div className="text-xs font-medium text-gray-500 mb-1">Title</div>
-                  <div className="text-sm text-gray-800">{nextActiveRule.notificationTitle}</div>
+                  <div className="text-sm text-gray-800">{todayActiveRule.notificationTitle}</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded border border-gray-200">
                   <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
-                  <div className="text-sm text-gray-800">{nextActiveRule.notificationMessage}</div>
+                  <div className="text-sm text-gray-800">{todayActiveRule.notificationMessage}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Toast设置 */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h3 className="text-xs font-semibold text-gray-600 mb-2">{t('popup.toastSettings', 'Toast Settings')}</h3>
+              <div className="space-y-2">
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
+                  <div className="text-sm text-gray-800">{todayActiveRule.toastMessage}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs font-medium text-gray-500 mb-1">Duration</div>
+                  <div className="text-sm text-gray-800">{todayActiveRule.toastDuration}s</div>
                 </div>
               </div>
             </div>
