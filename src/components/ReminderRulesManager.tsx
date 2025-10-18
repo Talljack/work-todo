@@ -12,9 +12,10 @@ import RuleEditorDialog from '@/components/RuleEditorDialog'
 interface ReminderRulesManagerProps {
   rules: ReminderRule[]
   onChange: (rules: ReminderRule[]) => void
+  onSave?: (rules: ReminderRule[]) => Promise<void> // 新增：保存回调，传入最新的规则
 }
 
-const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onChange }) => {
+const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onChange, onSave }) => {
   const { t } = useTranslation()
   const [editingRule, setEditingRule] = useState<ReminderRule | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -29,28 +30,56 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
     setDialogOpen(true)
   }
 
-  const handleDeleteRule = (ruleId: string) => {
+  const handleDeleteRule = async (ruleId: string) => {
     if (rules.length === 1) {
       alert(t('options.rules.deleteLastError', 'You must keep at least one reminder rule'))
       return
     }
     if (confirm(t('options.rules.deleteConfirm', 'Are you sure you want to delete this rule?'))) {
-      onChange(rules.filter((r) => r.id !== ruleId))
+      const updatedRules = rules.filter((r) => r.id !== ruleId)
+      onChange(updatedRules)
+
+      // 自动保存到 storage
+      if (onSave) {
+        setTimeout(async () => {
+          await onSave(updatedRules)
+        }, 0)
+      }
     }
   }
 
-  const handleSaveRule = (rule: ReminderRule) => {
+  const handleSaveRule = async (rule: ReminderRule) => {
+    let updatedRules: ReminderRule[]
+
     if (editingRule) {
       // Update existing rule
-      onChange(rules.map((r) => (r.id === rule.id ? rule : r)))
+      updatedRules = rules.map((r) => (r.id === rule.id ? rule : r))
+      onChange(updatedRules)
     } else {
       // Add new rule
-      onChange([...rules, rule])
+      updatedRules = [...rules, rule]
+      onChange(updatedRules)
+    }
+
+    // 自动保存到 storage
+    if (onSave) {
+      // 使用 setTimeout 确保 onChange 先更新 state
+      setTimeout(async () => {
+        await onSave(updatedRules)
+      }, 0)
     }
   }
 
-  const handleToggleEnabled = (ruleId: string, enabled: boolean) => {
-    onChange(rules.map((r) => (r.id === ruleId ? { ...r, enabled } : r)))
+  const handleToggleEnabled = async (ruleId: string, enabled: boolean) => {
+    const updatedRules = rules.map((r) => (r.id === ruleId ? { ...r, enabled } : r))
+    onChange(updatedRules)
+
+    // 自动保存到 storage
+    if (onSave) {
+      setTimeout(async () => {
+        await onSave(updatedRules)
+      }, 0)
+    }
   }
 
   const weekDayNames = [
@@ -127,6 +156,77 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
                     {formatWorkDays(rule.workDays)}
                   </p>
                 </div>
+
+                {/* Notification Settings */}
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-3">
+                    {t('options.rules.notifications', 'Notification Settings')}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="text-xs font-medium text-slate-500 mb-1">
+                        {t('options.rules.notificationTitle', 'Title')}
+                      </div>
+                      <div className="text-sm text-slate-800">{rule.notificationTitle}</div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="text-xs font-medium text-slate-500 mb-1">
+                        {t('options.rules.notificationMessage', 'Message')}
+                      </div>
+                      <div className="text-sm text-slate-800">{rule.notificationMessage}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toast Settings */}
+                <div className="mt-4 pt-4 border-t">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-3">
+                    {t('options.rules.toast', 'Toast Settings')}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="text-xs font-medium text-slate-500 mb-1">
+                        {t('options.rules.toastMessage', 'Toast Message')}
+                      </div>
+                      <div className="text-sm text-slate-800">{rule.toastMessage}</div>
+                    </div>
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                      <div className="text-xs font-medium text-slate-500 mb-1">
+                        {t('options.rules.toastDuration', 'Duration')}
+                      </div>
+                      <div className="text-sm text-slate-800">
+                        {rule.toastDuration} {t('options.rules.seconds', 'seconds')}
+                      </div>
+                    </div>
+                    {rule.toastClickUrl && (
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 md:col-span-2">
+                        <div className="text-xs font-medium text-slate-500 mb-1">
+                          {t('options.rules.toastClickUrl', 'Click URL')}
+                        </div>
+                        <div className="text-sm text-slate-800 truncate">{rule.toastClickUrl}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Late Reminders */}
+                {rule.lateReminders && rule.lateReminders.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                      {t('options.rules.lateReminders', 'Late Reminders')}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {rule.lateReminders.map((time, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
+                        >
+                          {time}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Template Content */}
                 {rule.templateContent && (

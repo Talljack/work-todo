@@ -29,8 +29,6 @@ const Options: React.FC = () => {
   const { t, i18n } = useTranslation()
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [activeSection, setActiveSection] = useState<NavigationSection>('general')
   const [version, setVersion] = useState('1.0.0')
 
@@ -40,23 +38,37 @@ const Options: React.FC = () => {
     setVersion(manifest.version)
   }, [])
 
-  // 切换语言并自动更新模板
-  const handleLanguageChange = (lang: string) => {
+  // 切换语言并自动保存
+  const handleLanguageChange = async (lang: string) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('language', lang)
 
     // 自动更新模板为新语言
-    handleResetTemplate(lang)
+    const defaultContent = getDefaultTemplateContent(lang)
+    const newConfig = {
+      ...config,
+      template: { ...config.template, content: defaultContent },
+    }
+    setConfig(newConfig)
+
+    // 自动保存
+    await saveConfig(newConfig)
+    await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
   }
 
   // 重置为默认模板（根据当前语言）
-  const handleResetTemplate = (language?: string) => {
+  const handleResetTemplate = async (language?: string) => {
     const lang = language || i18n.language
     const defaultContent = getDefaultTemplateContent(lang)
-    setConfig({
+    const newConfig = {
       ...config,
       template: { ...config.template, content: defaultContent },
-    })
+    }
+    setConfig(newConfig)
+
+    // 自动保存
+    await saveConfig(newConfig)
+    await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
   }
 
   // 加载配置
@@ -74,22 +86,21 @@ const Options: React.FC = () => {
     loadConfig()
   }, [])
 
-  // 保存配置
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await saveConfig(config)
-      // 通知后台重新初始化
-      await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch (error) {
-      console.error('Failed to save config:', error)
-      alert(t('options.save.error'))
-    } finally {
-      setSaving(false)
-    }
-  }
+  // 自动保存模板内容（防抖）
+  useEffect(() => {
+    if (loading) return // 避免初次加载时保存
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await saveConfig(config)
+        await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+      } catch (error) {
+        console.error('Failed to auto-save template:', error)
+      }
+    }, 1000) // 1秒防抖
+
+    return () => clearTimeout(timeoutId)
+  }, [config.template.content, loading])
 
   // 导出配置
   const handleExport = async () => {
@@ -326,6 +337,13 @@ const Options: React.FC = () => {
               <ReminderRulesManager
                 rules={config.reminderRules}
                 onChange={(rules) => setConfig({ ...config, reminderRules: rules })}
+                onSave={async (updatedRules) => {
+                  // 自动保存规则变更到 storage
+                  const newConfig = { ...config, reminderRules: updatedRules }
+                  await saveConfig(newConfig)
+                  // 通知后台重新初始化
+                  await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+                }}
               />
             </div>
           )}
@@ -381,24 +399,6 @@ const Options: React.FC = () => {
               <Statistics />
             </div>
           )}
-        </div>
-
-        {/* 固定底部保存按钮 */}
-        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg">
-          <div className="mx-auto max-w-4xl px-8 py-4 flex items-center justify-between">
-            <div className="flex-1">
-              {saved && (
-                <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-                  <CheckCircledIcon className="h-5 w-5" />
-                  <span>{t('options.save.success')}</span>
-                </div>
-              )}
-            </div>
-            <Button type="button" size="lg" onClick={handleSave} disabled={saving} className="min-w-[140px]">
-              {saving && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? t('options.save.saving') : t('options.save.button')}
-            </Button>
-          </div>
         </div>
       </main>
     </div>

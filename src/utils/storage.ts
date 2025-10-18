@@ -39,7 +39,8 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
       return {
         ...rule,
         // 如果规则没有 templateContent，使用全局模板作为默认值
-        templateContent: rule.templateContent || oldConfig.template?.content || getDefaultTemplateContent(currentLang),
+        // 使用 ?? 而不是 || 来正确处理空字符串
+        templateContent: rule.templateContent ?? oldConfig.template?.content ?? getDefaultTemplateContent(currentLang),
       }
     })
 
@@ -69,7 +70,8 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
       return {
         ...ruleWithoutQuickLinks,
         toastClickUrl: oldQuickLinks.length > 0 ? oldQuickLinks[0].url : '',
-        templateContent: oldConfig.template?.content || getDefaultTemplateContent(currentLang),
+        // 使用 ?? 而不是 || 来正确处理空字符串
+        templateContent: oldConfig.template?.content ?? getDefaultTemplateContent(currentLang),
       }
     })
 
@@ -97,7 +99,8 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
       return {
         ...rule,
         toastClickUrl: globalQuickLinks.length > 0 ? globalQuickLinks[0].url : '',
-        templateContent: oldConfig.template?.content || getDefaultTemplateContent(currentLang),
+        // 使用 ?? 而不是 || 来正确处理空字符串
+        templateContent: oldConfig.template?.content ?? getDefaultTemplateContent(currentLang),
       }
     })
 
@@ -138,7 +141,8 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
         oldWorkDays.toastMessage || (isChinese ? '别忘了发送今日工作计划！' : "Don't forget to send your work plan!"),
       toastDuration: oldWorkDays.toastDuration || 10,
       toastClickUrl: globalQuickLinks.length > 0 ? globalQuickLinks[0].url : '',
-      templateContent: oldConfig.template?.content || getDefaultTemplateContent(currentLang),
+      // 使用 ?? 而不是 || 来正确处理空字符串
+      templateContent: oldConfig.template?.content ?? getDefaultTemplateContent(currentLang),
     })
   } else {
     // 如果没有旧配置，使用默认规则

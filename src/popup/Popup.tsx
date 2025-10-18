@@ -147,7 +147,7 @@ const Popup: React.FC = () => {
   }
 
   return (
-    <div className="w-96 bg-gray-50">
+    <div className="w-[480px] bg-gray-50 max-h-[600px] overflow-y-auto">
       {/* 头部状态 */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6">
         <div className="flex items-center justify-between mb-2">
@@ -212,6 +212,36 @@ const Popup: React.FC = () => {
 
       {/* 主体内容 */}
       <div className="p-6 space-y-4">
+        {/* 当前激活的规则信息 */}
+        {nextActiveRule && (
+          <div className="card">
+            <div className="mb-3">
+              <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
+              <div className="text-lg font-bold text-primary-700">{nextActiveRule.name}</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {nextActiveRule.startTime} - {nextActiveRule.deadline} · Every {nextActiveRule.interval} min
+              </div>
+            </div>
+
+            {/* 通知设置 */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h3 className="text-xs font-semibold text-gray-600 mb-2">
+                {t('popup.notificationSettings', 'Notification Settings')}
+              </h3>
+              <div className="space-y-2">
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs font-medium text-gray-500 mb-1">Title</div>
+                  <div className="text-sm text-gray-800">{nextActiveRule.notificationTitle}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
+                  <div className="text-sm text-gray-800">{nextActiveRule.notificationMessage}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TODO 模板 */}
         <div className="card">
           <div className="flex items-center justify-between mb-3">
