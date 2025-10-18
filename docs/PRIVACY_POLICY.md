@@ -140,7 +140,7 @@ Work TODO Reminder is open source! You can:
 If you have questions about this Privacy Policy or our privacy practices:
 
 - **GitHub Issues:** [repository URL]/issues
-- **Email:** [your-email@example.com]
+- **Email:** [support@worktodo.app](mailto:support@worktodo.app)
 
 ## Compliance
 
@@ -218,7 +218,7 @@ Work TODO Reminder 使用 Chrome 的存储 API **在您的设备上本地存储*
    - 工作日选择
    - 提醒时间和间隔
    - TODO 模板内容
-   - 快捷链接
+   - 每条提醒规则的模板和文案
    - 语言偏好
    - Toast 通知设置
 
@@ -293,7 +293,7 @@ Work TODO Reminder 是开源的！您可以：
 如果您对本隐私政策或我们的隐私实践有疑问：
 
 - **GitHub Issues：** [repository URL]/issues
-- **电子邮件：** [your-email@example.com]
+- **电子邮件：** [support@worktodo.app](mailto:support@worktodo.app)
 
 ---
 

@@ -47,8 +47,8 @@ const Options: React.FC = () => {
     // 自动更新模板为新语言
     const defaultContent = getDefaultTemplateContent(lang)
     const newConfig = {
-      ...config,
-      template: { ...config.template, content: defaultContent },
+      ...configRef.current,
+      template: { ...configRef.current.template, content: defaultContent },
     }
     setConfig(newConfig)
 
@@ -62,8 +62,8 @@ const Options: React.FC = () => {
     const lang = language || i18n.language
     const defaultContent = getDefaultTemplateContent(lang)
     const newConfig = {
-      ...config,
-      template: { ...config.template, content: defaultContent },
+      ...configRef.current,
+      template: { ...configRef.current.template, content: defaultContent },
     }
     setConfig(newConfig)
 
@@ -343,10 +343,10 @@ const Options: React.FC = () => {
 
               <ReminderRulesManager
                 rules={config.reminderRules}
-                onChange={(rules) => setConfig({ ...config, reminderRules: rules })}
+                onChange={(rules) => setConfig({ ...configRef.current, reminderRules: rules })}
                 onSave={async (updatedRules) => {
                   // 自动保存规则变更到 storage
-                  const newConfig = { ...config, reminderRules: updatedRules }
+                  const newConfig = { ...configRef.current, reminderRules: updatedRules }
                   await saveConfig(newConfig)
                   // 通知后台重新初始化
                   await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
@@ -383,8 +383,8 @@ const Options: React.FC = () => {
                     value={config.template.content}
                     onChange={(e) =>
                       setConfig({
-                        ...config,
-                        template: { ...config.template, content: e.target.value },
+                        ...configRef.current,
+                        template: { ...configRef.current.template, content: e.target.value },
                       })
                     }
                     rows={12}

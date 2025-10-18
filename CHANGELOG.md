@@ -35,10 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - One-click copy to clipboard
   - Auto-language switching based on i18n settings
 
-- 🔗 **Quick Links Management**
-  - Add/edit/delete quick links
-  - Direct navigation to external tools
-  - Organized display in popup
+- 🧩 **Per-Rule Overrides**
+  - Individual templates per reminder rule
+  - Custom notification/toast copy per rule
+  - Independent toast targets for each reminder
 
 #### Statistics & Gamification
 
@@ -59,13 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### User Experience
 
-- 🎓 **Interactive Onboarding** (NEW!)
-  - 4-step guided tour for new users
-  - Feature introduction
-  - Work schedule setup guide
-  - Keyboard shortcuts tutorial
-  - Best practices and tips
-  - One-time display (persisted in storage)
+- 🧭 **Refined Popup Experience** (NEW!)
+  - Highlight of the next active reminder rule
+  - Live countdown to the upcoming deadline
+  - Contextual status chips (pending/sent/rest day)
 
 - ⌨️ **Keyboard Shortcuts** (NEW!)
   - `Ctrl/Cmd+Shift+T`: Open extension popup
@@ -256,7 +253,7 @@ See [TODO.md](TODO.md) for planned features in upcoming versions.
 
 ---
 
-[Unreleased]: https://github.com/yourusername/work-todo-reminder/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/yourusername/work-todo-reminder/releases/tag/v1.0.0
-[0.2.0]: https://github.com/yourusername/work-todo-reminder/releases/tag/v0.2.0
-[0.1.0]: https://github.com/yourusername/work-todo-reminder/releases/tag/v0.1.0
+[Unreleased]: https://github.com/yugangcao/work-todo-reminder/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/yugangcao/work-todo-reminder/releases/tag/v1.0.0
+[0.2.0]: https://github.com/yugangcao/work-todo-reminder/releases/tag/v0.2.0
+[0.1.0]: https://github.com/yugangcao/work-todo-reminder/releases/tag/v0.1.0

@@ -1,9 +1,21 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
+  "short_name": "Work TODO",
   "version": "1.0.0",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
+  "author": "Work TODO Reminder Team <support@worktodo.app>",
+  "homepage_url": "https://github.com/yugangcao/work-todo-reminder",
+  "support_url": "https://github.com/yugangcao/work-todo-reminder/issues",
+  "icons": {
+    "16": "src/assets/icons/icon-16.png",
+    "32": "src/assets/icons/icon-32.png",
+    "48": "src/assets/icons/icon-48.png",
+    "128": "src/assets/icons/icon-128.png",
+    "256": "src/assets/icons/icon-256.png",
+    "512": "src/assets/icons/icon-512.png"
+  },
   "options_ui": {
     "page": "pages/options.html",
     "open_in_tab": true
@@ -11,10 +23,9 @@
   "action": {
     "default_popup": "pages/popup.html",
     "default_icon": {
-      "16": "src/assets/icon.png",
-      "19": "src/assets/icon.png",
-      "32": "src/assets/icon.png",
-      "48": "src/assets/icon.png"
+      "16": "src/assets/icons/icon-16.png",
+      "32": "src/assets/icons/icon-32.png",
+      "48": "src/assets/icons/icon-48.png"
     }
   },
   "background": {

@@ -149,8 +149,8 @@ Popup
 ├─ Template Card
 │  ├─ 模板内容展示
 │  └─ 复制按钮
-├─ Quick Links Card
-│  └─ 链接列表
+├─ Active Rule Card
+│  └─ 当前规则的通知设置信息
 └─ Action Buttons
    └─ 标记已发送按钮
 ```
@@ -158,7 +158,6 @@ Popup
 **交互设计**：
 
 - 一键复制：使用 Clipboard API
-- 快捷链接：使用 `chrome.tabs.create` 在新标签打开
 - 标记已发送：通过 `runtime.sendMessage` 通知后台
 
 ### 6. Options 页面 (`src/options/Options.tsx`)
@@ -173,8 +172,6 @@ Options
 │  └─ 迟到提醒列表（Dynamic List）
 ├─ Template Section
 │  └─ 多行文本框
-├─ Quick Links Section
-│  └─ 动态列表（可增删改）
 └─ Other Section
    ├─ 时区显示
    └─ 导入/导出

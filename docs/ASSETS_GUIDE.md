@@ -252,7 +252,7 @@ If you have the chrome-devtools MCP server configured:
 - Settings tab active
 - Work days selection visible
 - Reminder times configured
-- Some quick links added
+- Example late reminders displayed
 - Language selector
 
 **Tips:**
@@ -443,7 +443,7 @@ If using these images on a website, provide descriptive alt text:
 ```html
 <img
   src="screenshot-popup.png"
-  alt="Work TODO Reminder popup window showing daily task template with quick links and Mark as Sent button"
+  alt="Work TODO Reminder popup showing daily template, active rule details, and Mark as Sent button"
 />
 ```
 
@@ -518,7 +518,7 @@ work-todo-reminder/
 
 ### Screenshot Captions
 
-1. **Popup**: "Access your daily TODO template and quick links instantly"
+1. **Popup**: "Access your daily TODO template and upcoming reminder details instantly"
 2. **Settings**: "Customize work days, reminder times, and notification preferences"
 3. **Statistics**: "Track completion rates, build streaks, and visualize your progress"
 4. **Onboarding**: "New users are guided through setup with interactive tutorials"

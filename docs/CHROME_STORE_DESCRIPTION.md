@@ -26,7 +26,7 @@ Work TODO Reminder is a smart productivity extension that helps you stay account
 - Pre-built templates in English and Chinese
 - Fully customizable to match your team's format
 - Quick copy-paste functionality
-- Support for quick links to frequently used tools
+- Per-rule overrides so each reminder can have a dedicated template
 
 🔔 **Multiple Reminder Methods**
 
@@ -41,7 +41,7 @@ Work TODO Reminder is a smart productivity extension that helps you stay account
 - Build and maintain daily streaks 🔥
 - View weekly and monthly statistics
 - Beautiful calendar view of your history
-- Gamified achievement system
+- Review the last 90 days at a glance
 
 ⌨️ **Keyboard Shortcuts**
 
@@ -78,7 +78,7 @@ Work TODO Reminder is a smart productivity extension that helps you stay account
 
 **Pro Tips:**
 
-- Add quick links to your team's chat or issue tracker
+- Create separate rules for different update channels
 - Set multiple late reminders to ensure you don't forget
 - Check the Statistics tab to see your progress
 - Use keyboard shortcuts for faster workflow
@@ -87,7 +87,7 @@ Work TODO Reminder is a smart productivity extension that helps you stay account
 
 - ✅ Statistics dashboard with charts
 - ✅ Keyboard shortcuts for power users
-- ✅ Interactive onboarding experience
+- ✅ Streamlined options page for quick configuration
 - ✅ History tracking (last 90 days)
 - ✅ Streak counter with gamification
 
@@ -95,7 +95,7 @@ Work TODO Reminder is a smart productivity extension that helps you stay account
 This extension is open source! Check out the code on GitHub and contribute.
 
 **Support:**
-Having issues? Contact us at [your-email@example.com] or open an issue on GitHub.
+Having issues? Contact us at [support@worktodo.app](mailto:support@worktodo.app) or open an issue on GitHub.
 
 ---
 
@@ -124,8 +124,8 @@ Work TODO Reminder 是一个智能生产力扩展程序，通过提醒您发送�
 
 - 内置中英文模板
 - 完全可定制以匹配您团队的格式
-- 快速复制粘贴功能
-- 支持常用工具的快捷链接
+- 每条提醒规则可使用独立模板
+- 弹窗内一键复制
 
 🔔 **多种提醒方式**
 
@@ -140,7 +140,7 @@ Work TODO Reminder 是一个智能生产力扩展程序，通过提醒您发送�
 - 建立并维持每日连续记录 🔥
 - 查看每周和每月统计数据
 - 精美的历史日历视图
-- 游戏化成就系统
+- 90 天历史记录一目了然
 
 ⌨️ **键盘快捷键**
 
@@ -177,7 +177,7 @@ Work TODO Reminder 是一个智能生产力扩展程序，通过提醒您发送�
 
 **专业提示：**
 
-- 添加团队聊天工具或问题跟踪器的快捷链接
+- 为不同场景创建多条提醒规则
 - 设置多个迟到提醒以确保不会忘记
 - 查看统计标签页以了解您的进度
 - 使用键盘快捷键提高工作效率
@@ -186,7 +186,7 @@ Work TODO Reminder 是一个智能生产力扩展程序，通过提醒您发送�
 
 - ✅ 带图表的统计仪表板
 - ✅ 为高级用户提供的键盘快捷键
-- ✅ 交互式引导体验
+- ✅ 经过打磨的设置页面，几步即可完成配置
 - ✅ 历史追踪（最近90天）
 - ✅ 游戏化的连续计数器
 
@@ -194,7 +194,7 @@ Work TODO Reminder 是一个智能生产力扩展程序，通过提醒您发送�
 此扩展程序是开源的！在 GitHub 上查看代码并做出贡献。
 
 **支持：**
-遇到问题？请通过 [your-email@example.com] 联系我们或在 GitHub 上提出问题。
+遇到问题？请通过 [support@worktodo.app](mailto:support@worktodo.app) 联系我们或在 GitHub 上提出问题。
 
 ---
 

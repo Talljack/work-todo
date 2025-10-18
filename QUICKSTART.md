@@ -52,16 +52,6 @@ pnpm build
 - 需要后端提供新的API接口
 ```
 
-#### 快捷链接（可选）
-
-```
-名称：企业微信群
-URL：https://work.weixin.qq.com/...
-
-名称：日报文档
-URL：https://docs.google.com/...
-```
-
 ### 4. 日常使用流程
 
 **早上 9:00**
@@ -73,7 +63,6 @@ URL：https://docs.google.com/...
 
 - 查看 TODO 模板
 - 点击"复制"按钮，一键复制模板内容
-- 点击快捷链接，跳转到发送渠道
 
 **填写并发送**
 

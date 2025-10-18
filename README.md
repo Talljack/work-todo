@@ -26,8 +26,8 @@
 
 - Pre-built templates in English and Chinese
 - Fully customizable to match your team's format
-- Quick copy-paste functionality
-- Support for quick links to frequently used tools (Slack, Jira, etc.)
+- Per-rule overrides so each reminder can use a dedicated template
+- One-click copy from the extension popup
 
 #### 🔔 Multiple Reminder Methods
 
@@ -42,7 +42,7 @@
 - **Streak Counter**: Build and maintain daily streaks 🔥
 - **Weekly/Monthly Stats**: View your performance over time
 - **Calendar View**: Beautiful GitHub-style contribution calendar
-- **Achievements**: Unlock badges for consistent performance
+- **90-Day History**: Review the last three months at a glance
 
 #### ⌨️ Keyboard Shortcuts
 
@@ -65,7 +65,12 @@
 
 ### Screenshots
 
-_Coming soon - Check the `assets/` folder_
+Latest promotional assets and mock screenshots are available under `assets/store/`:
+
+- `promo-small-440x280.png`
+- `promo-large-1280x800.png`
+- `promo-marquee-1400x560.png`
+- `screenshot-*.png` (popup, settings, statistics, onboarding, notifications)
 
 ### Installation
 
@@ -73,13 +78,13 @@ _Coming soon - Check the `assets/` folder_
 
 1. Visit the [Chrome Web Store page](#) <!-- Add link after publishing -->
 2. Click "Add to Chrome"
-3. Follow the onboarding guide
+3. Pin the extension icon for quick access
 
 #### From Source (For Developers)
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/work-todo-reminder.git
+git clone https://github.com/yugangcao/work-todo-reminder.git
 cd work-todo-reminder
 
 # Install dependencies
@@ -99,10 +104,10 @@ pnpm run build
 
 #### First-Time Setup
 
-1. Complete the interactive onboarding guide
-2. Set your work days and reminder times
-3. Customize your TODO template
-4. (Optional) Add quick links to your tools
+1. Open the options page from the popup or `chrome://extensions`
+2. Choose your work days and reminder schedule
+3. Review each reminder rule and adjust notification copy
+4. Customize the global TODO template (or per-rule overrides)
 
 #### Daily Workflow
 
@@ -115,16 +120,8 @@ pnpm run build
 
 #### Advanced Features
 
-**Quick Links**
-Add shortcuts to frequently used tools:
-
-```
-Name: Team Slack
-URL: https://your-team.slack.com/...
-
-Name: Jira Board
-URL: https://your-company.atlassian.net/...
-```
+**Per-Rule Templates**
+Create specialised content for each reminder rule, perfect for different teams or workflows.
 
 **Multiple Late Reminders**
 Set up failsafe reminders:
@@ -138,7 +135,6 @@ Set up failsafe reminders:
 - View your completion history for the last 90 days
 - Check your current streak and personal best
 - Analyze weekly/monthly performance trends
-- Get motivated by achievement unlocks
 
 ### Development
 
@@ -237,7 +233,7 @@ See [TODO.md](TODO.md) for planned features and improvements.
 ### FAQ
 
 **Q: Does this extension work offline?**
-A: Yes! All functionality works offline except for quick links to external tools.
+A: Yes! Everything runs on your device; you only need the internet when you copy the template into your team's chat or tool.
 
 **Q: Can I use this for non-work purposes?**
 A: Absolutely! Customize it for daily journaling, habit tracking, or any regular reminder needs.
@@ -269,10 +265,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Support
 
-- **Bug Reports**: [GitHub Issues](https://github.com/yourusername/work-todo-reminder/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/yourusername/work-todo-reminder/discussions)
-- **Email**: [your-email@example.com]
-- **Twitter**: [@yourhandle]
+- **Bug Reports**: [GitHub Issues](https://github.com/yugangcao/work-todo-reminder/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/yugangcao/work-todo-reminder/discussions)
+- **Email**: [support@worktodo.app](mailto:support@worktodo.app)
 
 ### Acknowledgments
 
@@ -297,8 +292,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 内置中英文模板
 - 完全可定制以匹配您团队的格式
-- 快速复制粘贴功能
-- 支持常用工具（Slack、Jira等）的快捷链接
+- 每条提醒规则都可使用独立模板
+- 弹窗中一键复制
 
 #### 🔔 多种提醒方式
 
@@ -313,7 +308,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **连续记录**：建立并维持每日连续记录 🔥
 - **每周/每月统计**：查看您随时间的表现
 - **日历视图**：精美的 GitHub 风格贡献日历
-- **成就系统**：解锁徽章以保持一致性
+- **90 天历史记录**：随时回顾近三个月表现
 
 #### ⌨️ 键盘快捷键
 
@@ -346,7 +341,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/work-todo-reminder.git
+git clone https://github.com/yugangcao/work-todo-reminder.git
 cd work-todo-reminder
 
 # 安装依赖
@@ -366,10 +361,10 @@ pnpm run build
 
 #### 首次设置
 
-1. 完成交互式引导指南
-2. 设置您的工作日和提醒时间
-3. 自定义您的 TODO 模板
-4. （可选）添加工具的快捷链接
+1. 打开扩展设置页面
+2. 选择工作日并设置提醒时间
+3. 调整提醒规则和迟到补提醒
+4. 自定义您的 TODO 模板
 
 #### 每日工作流程
 
@@ -387,7 +382,7 @@ pnpm run build
 ### 常见问题
 
 **问：此扩展程序可以离线工作吗？**
-答：可以！除了快捷链接到外部工具外，所有功能都可以离线工作。
+答：可以！所有功能都在本地运行，无需联网。
 
 **问：我可以将其用于非工作目的吗？**
 答：当然！自定义它用于每日日记、习惯追踪或任何定期提醒需求。
@@ -416,9 +411,9 @@ pnpm run build
 
 ### 支持
 
-- **错误报告**：[GitHub Issues](https://github.com/yourusername/work-todo-reminder/issues)
-- **功能请求**：[GitHub Discussions](https://github.com/yourusername/work-todo-reminder/discussions)
-- **电子邮件**：[your-email@example.com]
+- **错误报告**：[GitHub Issues](https://github.com/yugangcao/work-todo-reminder/issues)
+- **功能请求**：[GitHub Discussions](https://github.com/yugangcao/work-todo-reminder/discussions)
+- **电子邮件**：[support@worktodo.app](mailto:support@worktodo.app)
 
 ---
 
