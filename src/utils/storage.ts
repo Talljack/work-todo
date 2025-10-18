@@ -56,7 +56,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     return newConfig
   }
 
-  // v3 -> v4: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
+  // v3 -> v5: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
   if (oldConfig.version === 3 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     console.log('[migrateConfig] Migrating from v3 to v5')
 
@@ -86,7 +86,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     return newConfig
   }
 
-  // v2 -> v3 -> v5: 将 template.quickLinks 迁移到 toastClickUrl
+  // v2 -> v5: 将 template.quickLinks 迁移到 toastClickUrl
   if (oldConfig.version === 2 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     console.log('[migrateConfig] Migrating from v2 to v5')
 
