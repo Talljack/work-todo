@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircledIcon,
@@ -31,6 +31,7 @@ const Options: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [activeSection, setActiveSection] = useState<NavigationSection>('general')
   const [version, setVersion] = useState('1.0.0')
+  const configRef = useRef<AppConfig>(config) // 保存最新的 config 引用
 
   // 获取扩展版本号
   useEffect(() => {
@@ -86,13 +87,19 @@ const Options: React.FC = () => {
     loadConfig()
   }, [])
 
+  // 同步最新的 config 到 ref
+  useEffect(() => {
+    configRef.current = config
+  }, [config])
+
   // 自动保存模板内容（防抖）
   useEffect(() => {
     if (loading) return // 避免初次加载时保存
 
     const timeoutId = setTimeout(async () => {
       try {
-        await saveConfig(config)
+        // 使用 ref 获取最新的 config，避免保存闭包中的旧快照
+        await saveConfig(configRef.current)
         await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
       } catch (error) {
         console.error('Failed to auto-save template:', error)
