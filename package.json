@@ -73,12 +73,15 @@
     "pre-commit": "npx lint-staged"
   },
   "lint-staged": {
+    "package.json": [
+      "prettier --write --cache"
+    ],
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write --cache --ignore-unknown",
-      "eslint --cache --fix"
+      "prettier --write --cache",
+      "eslint --fix --max-warnings 0"
     ],
     "*.{css,scss,less,md,html,json,yaml,yml}": [
-      "prettier --write --cache --ignore-unknown"
+      "prettier --write --cache"
     ]
   }
 }
