@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import browser from 'webextension-polyfill'
-import type { AppConfig, DailyState } from '@/types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import type { AppConfig, DailyState, ReminderRule } from '@/types'
 import { getConfig, getDailyState } from '@/utils/storage'
-import { formatTime, getTimeUntilDeadline, isWorkDay } from '@/utils/time'
+import { formatTime, getTimeUntilDeadline, isWorkDay, getNextReminderTime } from '@/utils/time'
 
 const Popup: React.FC = () => {
   const { t } = useTranslation()
@@ -42,7 +44,7 @@ const Popup: React.FC = () => {
     if (!config) return
 
     try {
-      await navigator.clipboard.writeText(config.template.content)
+      await navigator.clipboard.writeText(getTemplateContent())
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
@@ -91,10 +93,44 @@ const Popup: React.FC = () => {
     return isWorkDay(new Date(), rule)
   })
 
-  // 获取第一个启用规则的截止时间
-  const firstEnabledRule = config.reminderRules.find((rule) => rule.enabled)
-  const timeUntilDeadline = firstEnabledRule
-    ? getTimeUntilDeadline(firstEnabledRule)
+  // 获取即将触发的规则（下一个提醒时间最早的规则）
+  const getNextActiveRule = (): ReminderRule | null => {
+    const now = new Date()
+    let earliestTime: Date | null = null
+    let earliestRule: ReminderRule | null = null
+
+    for (const rule of config.reminderRules) {
+      if (!rule.enabled) continue
+
+      const nextTime = getNextReminderTime(now, rule, state)
+      if (nextTime) {
+        if (!earliestTime || nextTime < earliestTime) {
+          earliestTime = nextTime
+          earliestRule = rule
+        }
+      }
+    }
+
+    return earliestRule
+  }
+
+  // 获取要显示的模板内容
+  const getTemplateContent = (): string => {
+    const activeRule = getNextActiveRule()
+
+    // 如果有即将触发的规则且该规则有自定义模板，使用规则的模板
+    if (activeRule?.templateContent) {
+      return activeRule.templateContent
+    }
+
+    // 否则使用全局模板
+    return config.template.content
+  }
+
+  // 获取今天会触发的规则的截止时间（必须是今天的工作日）
+  const nextActiveRule = getNextActiveRule()
+  const timeUntilDeadline = nextActiveRule
+    ? getTimeUntilDeadline(nextActiveRule)
     : { isPastDeadline: true, hours: 0, minutes: 0 }
 
   const getDeadlineText = () => {
@@ -210,9 +246,9 @@ const Popup: React.FC = () => {
               )}
             </button>
           </div>
-          <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono bg-gray-50 p-3 rounded border border-gray-200 max-h-48 overflow-y-auto">
-            {config.template.content}
-          </pre>
+          <div className="prose prose-sm max-w-none bg-gray-50 p-3 rounded border border-gray-200 max-h-48 overflow-y-auto">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{getTemplateContent()}</ReactMarkdown>
+          </div>
         </div>
 
         {/* 操作按钮 */}
