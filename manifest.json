@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "short_name": "Work TODO",
+  "short_name": "Routine",
   "version": "1.0.0",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "author": "Work TODO Reminder Team <support@worktodo.app>",
+  "author": "Routine Reminder Team <support@worktodo.app>",
   "homepage_url": "https://github.com/yugangcao/work-todo-reminder",
   "support_url": "https://github.com/yugangcao/work-todo-reminder/issues",
   "icons": {
@@ -45,7 +45,7 @@
         "default": "Ctrl+Shift+T",
         "mac": "Command+Shift+T"
       },
-      "description": "Open Work TODO Reminder"
+      "description": "Open Routine Reminder"
     },
     "mark-as-sent": {
       "suggested_key": {

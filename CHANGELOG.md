@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Templates & Productivity
 
-- 📋 **TODO Templates**
+- 📋 **Routine Templates**
   - Pre-built English and Chinese templates
   - Fully customizable template editor
   - One-click copy to clipboard
@@ -192,7 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### v1.0.0 Release Highlights
 
-This is the first stable release of Work TODO Reminder! 🎉
+This is the first stable release of Routine Reminder! 🎉
 
 **What's New:**
 

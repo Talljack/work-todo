@@ -100,7 +100,7 @@ console.log('✅ Monitoring enabled')
 ```
 📦 Config saved:
   Rules: 2 → 2
-  First rule: Work Plan Reminder  ← 被覆盖
+  First rule: Daily Routine Reminder  ← 被覆盖
   Template changed: true
 
 ❌ Test FAILED: Rule change was overwritten!

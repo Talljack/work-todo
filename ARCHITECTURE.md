@@ -2,7 +2,7 @@
 
 ## 系统概览
 
-Work TODO Reminder 是一个基于 Chrome Extension Manifest V3 的浏览器扩展，使用现代前端技术栈构建。
+Routine Reminder 是一个基于 Chrome Extension Manifest V3 的浏览器扩展，使用现代前端技术栈构建。
 
 ### 技术选型理由
 
@@ -23,7 +23,7 @@ Work TODO Reminder 是一个基于 Chrome Extension Manifest V3 的浏览器扩�
 ```typescript
 interface AppConfig {
   workDays: WorkDayConfig // 工作日配置
-  template: TodoTemplate // TODO 模板
+  template: TodoTemplate // 提醒模板
   timezone: string // 时区（只读）
 }
 ```
@@ -35,7 +35,7 @@ interface AppConfig {
 ```typescript
 interface DailyState {
   date: string // 日期 "YYYY-MM-DD"
-  sent: boolean // 是否已发送
+  sent: boolean // 是否已完成
   lastRemindTime?: string // 最后提醒时间
 }
 ```
@@ -79,7 +79,7 @@ export async function getConfig(): Promise<AppConfig> {
 
 ```typescript
 function getNextReminderTime(now, config, state) {
-  // 1. 已发送 → 不提醒
+  // 1. 已完成 → 不提醒
   if (state.sent) return null
 
   // 2. 非工作日 → 不提醒
@@ -145,20 +145,20 @@ Popup
 │  ├─ 标题
 │  ├─ 设置按钮
 │  ├─ 当前时间
-│  └─ 状态徽章（已发送/待发送/休息日）
+│  └─ 状态徽章（已完成/待发送/休息日）
 ├─ Template Card
 │  ├─ 模板内容展示
 │  └─ 复制按钮
 ├─ Active Rule Card
 │  └─ 当前规则的通知设置信息
 └─ Action Buttons
-   └─ 标记已发送按钮
+   └─ 标记已完成按钮
 ```
 
 **交互设计**：
 
 - 一键复制：使用 Clipboard API
-- 标记已发送：通过 `runtime.sendMessage` 通知后台
+- 标记已完成：通过 `runtime.sendMessage` 通知后台
 
 ### 6. Options 页面 (`src/options/Options.tsx`)
 
@@ -217,7 +217,7 @@ handleReminder()
     └─ 安排下次提醒
 ```
 
-### 3. 标记已发送流程
+### 3. 标记已完成流程
 
 ```
 User 点击按钮

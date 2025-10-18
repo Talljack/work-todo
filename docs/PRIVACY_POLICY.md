@@ -1,10 +1,10 @@
-# Privacy Policy for Work TODO Reminder
+# Privacy Policy for Routine Reminder
 
 **Last Updated: January 15, 2025**
 
 ## Introduction
 
-Work TODO Reminder ("we", "our", or "the extension") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our Chrome extension.
+Routine Reminder ("we", "our", or "the extension") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our Chrome extension.
 
 ## TL;DR (Quick Summary)
 
@@ -18,12 +18,12 @@ Work TODO Reminder ("we", "our", or "the extension") is committed to protecting 
 
 ### Data Stored Locally
 
-Work TODO Reminder stores the following information **locally on your device** using Chrome's storage API:
+Routine Reminder stores the following information **locally on your device** using Chrome's storage API:
 
 1. **Configuration Settings**
    - Work days selection
    - Reminder times and intervals
-   - TODO template content
+   - routine template content
    - Quick links
    - Language preference
    - Toast notification settings
@@ -62,7 +62,7 @@ Your data is used **entirely on your device** for the following purposes:
 
 ## Permissions Explanation
 
-Work TODO Reminder requests the following permissions:
+Routine Reminder requests the following permissions:
 
 | Permission      | Why We Need It                                                            |
 | --------------- | ------------------------------------------------------------------------- |
@@ -103,7 +103,7 @@ Use the export/import feature to transfer your settings to another device.
 
 ## Third-Party Services
 
-Work TODO Reminder **does not use any third-party services**, including:
+Routine Reminder **does not use any third-party services**, including:
 
 - No analytics (Google Analytics, etc.)
 - No crash reporting (Sentry, etc.)
@@ -115,7 +115,7 @@ All code runs locally in your browser.
 
 ## Children's Privacy
 
-Work TODO Reminder does not knowingly collect any information from children under 13. The extension is designed for workplace productivity and is not intended for use by children.
+Routine Reminder does not knowingly collect any information from children under 13. The extension is designed for personal and team productivity and is not intended for use by children.
 
 ## Changes to This Policy
 
@@ -128,7 +128,7 @@ Continued use of the extension after changes constitutes acceptance of the updat
 
 ## Open Source
 
-Work TODO Reminder is open source! You can:
+Routine Reminder is open source! You can:
 
 - Review the source code on GitHub: [repository URL]
 - Verify that we follow this privacy policy
@@ -146,7 +146,7 @@ If you have questions about this Privacy Policy or our privacy practices:
 
 ### GDPR Compliance (EU)
 
-Work TODO Reminder is GDPR-compliant because:
+Routine Reminder is GDPR-compliant because:
 
 - We don't collect personal data
 - We don't process personal data
@@ -155,7 +155,7 @@ Work TODO Reminder is GDPR-compliant because:
 
 ### CCPA Compliance (California)
 
-Work TODO Reminder complies with CCPA because:
+Routine Reminder complies with CCPA because:
 
 - We don't sell personal information
 - We don't collect personal information
@@ -184,7 +184,7 @@ We believe in complete transparency:
 
 ## Summary
 
-Work TODO Reminder is a privacy-first extension. Your data stays on your device, period. We can't access your data because we never receive it in the first place.
+Routine Reminder is a privacy-first extension. Your data stays on your device, period. We can't access your data because we never receive it in the first place.
 
 ---
 
@@ -198,7 +198,7 @@ Work TODO Reminder is a privacy-first extension. Your data stays on your device,
 
 ## 简介
 
-Work TODO Reminder（"我们"或"本扩展程序"）致力于保护您的隐私。本隐私政策说明了您使用我们的 Chrome 扩展程序时我们如何处理信息。
+Routine Reminder（"我们"或"本扩展程序"）致力于保护您的隐私。本隐私政策说明了您使用我们的 Chrome 扩展程序时我们如何处理信息。
 
 ## 简要总结
 
@@ -212,18 +212,18 @@ Work TODO Reminder（"我们"或"本扩展程序"）致力于保护您的隐私�
 
 ### 本地存储的数据
 
-Work TODO Reminder 使用 Chrome 的存储 API **在您的设备上本地存储**以下信息：
+Routine Reminder 使用 Chrome 的存储 API **在您的设备上本地存储**以下信息：
 
 1. **配置设置**
    - 工作日选择
    - 提醒时间和间隔
-   - TODO 模板内容
+   - 提醒模板内容
    - 每条提醒规则的模板和文案
    - 语言偏好
    - Toast 通知设置
 
 2. **使用数据（仅本地）**
-   - 每日完成状态（已发送/未发送）
+   - 每日完成状态（已完成/未发送）
    - 最近90天的历史记录
    - 连续计数器
    - 统计计算
@@ -250,7 +250,7 @@ Work TODO Reminder 使用 Chrome 的存储 API **在您的设备上本地存储*
 
 ## 权限说明
 
-Work TODO Reminder 请求以下权限：
+Routine Reminder 请求以下权限：
 
 | 权限            | 为什么需要                                  |
 | --------------- | ------------------------------------------- |
@@ -281,7 +281,7 @@ Work TODO Reminder 请求以下权限：
 
 ## 开源
 
-Work TODO Reminder 是开源的！您可以：
+Routine Reminder 是开源的！您可以：
 
 - 在 GitHub 上查看源代码
 - 验证我们遵守此隐私政策

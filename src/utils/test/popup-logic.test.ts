@@ -5,21 +5,21 @@ import { getNextReminderTime } from '@/utils/time'
 describe('Popup Display Logic - Multi-Rule Scenarios', () => {
   const state: DailyState = { date: '', sent: false }
 
-  // 创建工作计划提醒规则（周一到周五，11:00-12:00）
-  const workPlanRule: ReminderRule = {
-    id: 'work-plan',
-    name: 'Work Plan Reminder',
+  // 创建例行任务提醒规则（周一到周五，11:00-12:00）
+  const dailyRoutineRule: ReminderRule = {
+    id: 'daily-routine',
+    name: 'Daily Routine Reminder',
     enabled: true,
     workDays: [true, true, true, true, true, false, false], // Mon-Fri
     startTime: '11:00',
-    interval: 15,
+    interval: 20,
     deadline: '12:00',
-    lateReminders: [],
-    notificationTitle: 'Work Plan',
-    notificationMessage: 'Send your work plan',
-    toastMessage: 'Work plan reminder',
+    lateReminders: ['12:30'],
+    notificationTitle: 'Routine Check-in',
+    notificationMessage: "It's time for your daily routine",
+    toastMessage: "Don't forget today's routine!",
     toastDuration: 10,
-    templateContent: "[Yesterday's Review]\n-\n\n[Today's Plan]\n-\n\n[Risks & Requirements]\n-",
+    templateContent: "[Today's Focus]\n-\n\n[Routine Tasks]\n-\n\n[Notes]\n-",
   }
 
   // 创建睡觉提醒规则（每天，23:00-23:45，避免跨午夜问题）
@@ -39,7 +39,7 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
     templateContent: "[Yesterday's Review]\n-\n\n[Today's Plan]\n-\n\n[Risks & Requirements]\n-",
   }
 
-  const rules = [workPlanRule, sleepRule]
+  const rules = [dailyRoutineRule, sleepRule]
 
   /**
    * 获取下一个会触发的规则（模拟 Popup 的逻辑）
@@ -64,7 +64,7 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
   }
 
   describe('Weekend (Saturday) Scenarios', () => {
-    test('Saturday 11:17 - Should show Sleep Reminder (not Work Plan)', () => {
+    test('Saturday 11:17 - Should show Sleep Reminder (not Daily Routine)', () => {
       // 2025-10-18 is Saturday
       const now = new Date('2025-10-18T11:17:00')
       const activeRule = getNextActiveRule(now)
@@ -115,7 +115,7 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
   })
 
   describe('Weekend (Sunday) Scenarios', () => {
-    test('Sunday 10:00 - Should show Sleep Reminder (not Work Plan)', () => {
+    test('Sunday 10:00 - Should show Sleep Reminder (not Daily Routine)', () => {
       // 2025-10-19 is Sunday
       const now = new Date('2025-10-19T10:00:00')
       const activeRule = getNextActiveRule(now)
@@ -130,13 +130,13 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
   })
 
   describe('Weekday (Monday) Scenarios', () => {
-    test('Monday 10:00 - Should show Work Plan Reminder', () => {
+    test('Monday 10:00 - Should show Daily Routine Reminder', () => {
       // 2025-10-20 is Monday
       const now = new Date('2025-10-20T10:00:00')
       const activeRule = getNextActiveRule(now)
 
       expect(activeRule).not.toBeNull()
-      expect(activeRule?.name).toBe('Work Plan Reminder')
+      expect(activeRule?.name).toBe('Daily Routine Reminder')
       expect(activeRule?.id).toBe('work-plan')
 
       const nextTime = getNextReminderTime(now, activeRule!, state)
@@ -144,23 +144,23 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
       expect(nextTime?.getMinutes()).toBe(0)
     })
 
-    test('Monday 11:30 - Should show Work Plan Reminder', () => {
+    test('Monday 11:30 - Should show Daily Routine Reminder', () => {
       const now = new Date('2025-10-20T11:30:00')
       const activeRule = getNextActiveRule(now)
 
       expect(activeRule).not.toBeNull()
-      expect(activeRule?.name).toBe('Work Plan Reminder')
+      expect(activeRule?.name).toBe('Daily Routine Reminder')
 
       const nextTime = getNextReminderTime(now, activeRule!, state)
       expect(nextTime?.getHours()).toBe(11)
       expect(nextTime?.getMinutes()).toBe(30)
     })
 
-    test('Monday 13:00 - Should show Sleep Reminder (Work Plan ended)', () => {
+    test('Monday 13:00 - Should show Sleep Reminder (Daily Routine ended)', () => {
       const now = new Date('2025-10-20T13:00:00')
       const activeRule = getNextActiveRule(now)
 
-      // 工作计划提醒已结束，应该显示睡觉提醒
+      // 例行任务提醒已结束，应该显示睡觉提醒
       expect(activeRule).not.toBeNull()
       expect(activeRule?.name).toBe('睡觉提醒')
 
@@ -183,13 +183,13 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
   })
 
   describe('Edge Cases', () => {
-    test('Monday 01:00 - Should show Work Plan Reminder (next morning)', () => {
-      // 凌晨 1:00（周一），下一个提醒是 11:00 的工作计划
+    test('Monday 01:00 - Should show Daily Routine Reminder (next morning)', () => {
+      // 凌晨 1:00（周一），下一个提醒是 11:00 的例行任务
       const now = new Date('2025-10-20T01:00:00')
       const activeRule = getNextActiveRule(now)
 
       expect(activeRule).not.toBeNull()
-      expect(activeRule?.name).toBe('Work Plan Reminder')
+      expect(activeRule?.name).toBe('Daily Routine Reminder')
 
       const nextTime = getNextReminderTime(now, activeRule!, state)
       expect(nextTime?.getHours()).toBe(11)
@@ -200,11 +200,11 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
       const sentState: DailyState = { date: '2025-10-20', sent: true }
       const now = new Date('2025-10-20T11:00:00')
 
-      const nextTimeWorkPlan = getNextReminderTime(now, workPlanRule, sentState)
+      const nextTimeDailyRoutine = getNextReminderTime(now, dailyRoutineRule, sentState)
       const nextTimeSleep = getNextReminderTime(now, sleepRule, sentState)
 
       // 如果已发送，两个规则都不应该再提醒
-      expect(nextTimeWorkPlan).toBeNull()
+      expect(nextTimeDailyRoutine).toBeNull()
       expect(nextTimeSleep).toBeNull()
     })
   })
@@ -225,7 +225,7 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
       expect(minutes).toBe(43)
     })
 
-    test('Monday 10:00 - Time until Work Plan should be 1h 0m', () => {
+    test('Monday 10:00 - Time until Daily Routine should be 1h 0m', () => {
       const now = new Date('2025-10-20T10:00:00')
       const activeRule = getNextActiveRule(now)
       const nextTime = getNextReminderTime(now, activeRule!, state)

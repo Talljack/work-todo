@@ -126,19 +126,19 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
 
     reminderRules.push({
       id: `rule-${Date.now()}`,
-      name: isChinese ? '工作计划提醒' : 'Work Plan Reminder',
+      name: isChinese ? '每日例行提醒' : 'Daily Routine Reminder',
       enabled: true,
       workDays: oldWorkDays.enabled,
       startTime: oldWorkDays.startTime,
       interval: oldWorkDays.interval,
       deadline: oldWorkDays.deadline,
       lateReminders: oldWorkDays.lateReminders,
-      notificationTitle: isChinese ? '提醒：发送今日 TODO' : "Reminder: Send Today's TODO",
+      notificationTitle: isChinese ? '提醒：今日例行检查' : 'Reminder: Daily routine check-in',
       notificationMessage: isChinese
-        ? '别忘了发送今日工作计划！点击打开扩展。'
-        : "Don't forget to send your daily work plan! Click to open.",
+        ? '别忘了今天的例行任务！点击查看详情。'
+        : "It's time for your daily routine. Click to review.",
       toastMessage:
-        oldWorkDays.toastMessage || (isChinese ? '别忘了发送今日工作计划！' : "Don't forget to send your work plan!"),
+        oldWorkDays.toastMessage || (isChinese ? '别忘了完成今日例行任务！' : "Don't forget today's routine!"),
       toastDuration: oldWorkDays.toastDuration || 10,
       toastClickUrl: globalQuickLinks.length > 0 ? globalQuickLinks[0].url : '',
       // 使用 ?? 而不是 || 来正确处理空字符串

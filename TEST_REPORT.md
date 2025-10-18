@@ -1,4 +1,4 @@
-# 功能测试报告 - Work TODO Reminder
+# 功能测试报告 - Routine Reminder
 
 ## 测试日期: 2025-10-17
 
@@ -58,7 +58,7 @@
 - ✅ 开始时间之前
 - ✅ 提醒期间内（当前时间 + 间隔）
 - ✅ 截止时间后的迟到提醒
-- ✅ 已发送状态处理
+- ✅ 已完成状态处理
 - ✅ 非工作日跳过
 - ✅ 超过所有提醒时间
 
@@ -77,7 +77,7 @@
 
 **真实场景** (3 tests)
 
-- ✅ 工作计划提醒（9-10am, 每15分钟）
+- ✅ 例行任务提醒（9-10am, 每15分钟）
 - ✅ 下午茶提醒（3-4pm, 每30分钟）
 - ✅ 睡觉提醒（11pm-12am, 每天）
 
@@ -151,7 +151,7 @@
 
 ```typescript
 function getNextReminderTime(now, rule, state) {
-  // 1. 已发送 → null
+  // 1. 已完成 → null
   if (state.sent) return null
 
   // 2. 非工作日 → null
@@ -213,7 +213,7 @@ function getNextReminderTime(now, rule, state) {
 
 ### 立即可用
 
-1. ✅ 创建多个提醒规则（工作计划、下午茶、睡觉、吃药等）
+1. ✅ 创建多个提醒规则（例行任务、下午茶、睡觉、吃药等）
 2. ✅ 自定义工作日（Mon-Sun 任意组合）
 3. ✅ 灵活的时间设置（开始时间、截止时间、间隔）
 4. ✅ 迟到补提醒
@@ -224,7 +224,7 @@ function getNextReminderTime(now, rule, state) {
 
 ### 已测试的真实场景
 
-- ✅ 工作计划提醒（Mon-Fri, 9-10am, 每15分钟）
+- ✅ 例行任务提醒（Mon-Fri, 9-10am, 每15分钟）
 - ✅ 下午茶提醒（Mon-Fri, 3-4pm, 每30分钟）
 - ✅ 睡觉提醒（每天, 11pm-12am, 每15分钟）
 

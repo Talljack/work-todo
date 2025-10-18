@@ -33,6 +33,12 @@ const Options: React.FC = () => {
   const [version, setVersion] = useState('1.0.0')
   const configRef = useRef<AppConfig>(config) // 保存最新的 config 引用
 
+  // 更新 config 的辅助函数，同时更新 state 和 ref
+  const updateConfig = (newConfig: AppConfig) => {
+    configRef.current = newConfig // 立即同步更新 ref
+    setConfig(newConfig) // 异步更新 state
+  }
+
   // 获取扩展版本号
   useEffect(() => {
     const manifest = browser.runtime.getManifest()
@@ -50,7 +56,7 @@ const Options: React.FC = () => {
       ...configRef.current,
       template: { ...configRef.current.template, content: defaultContent },
     }
-    setConfig(newConfig)
+    updateConfig(newConfig)
 
     // 自动保存
     await saveConfig(newConfig)
@@ -65,7 +71,7 @@ const Options: React.FC = () => {
       ...configRef.current,
       template: { ...configRef.current.template, content: defaultContent },
     }
-    setConfig(newConfig)
+    updateConfig(newConfig)
 
     // 自动保存
     await saveConfig(newConfig)
@@ -77,7 +83,7 @@ const Options: React.FC = () => {
     const loadConfig = async () => {
       try {
         const cfg = await getConfig()
-        setConfig(cfg)
+        updateConfig(cfg)
       } catch (error) {
         console.error('Failed to load config:', error)
       } finally {
@@ -86,11 +92,6 @@ const Options: React.FC = () => {
     }
     loadConfig()
   }, [])
-
-  // 同步最新的 config 到 ref
-  useEffect(() => {
-    configRef.current = config
-  }, [config])
 
   // 自动保存模板内容（防抖）
   useEffect(() => {
@@ -139,7 +140,7 @@ const Options: React.FC = () => {
         const text = await file.text()
         await importConfig(text)
         const newConfig = await getConfig()
-        setConfig(newConfig)
+        updateConfig(newConfig)
         alert(t('options.import.success'))
         // 重新初始化闹钟
         await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
@@ -160,7 +161,7 @@ const Options: React.FC = () => {
     ) {
       try {
         await saveConfig(DEFAULT_CONFIG)
-        setConfig(DEFAULT_CONFIG)
+        updateConfig(DEFAULT_CONFIG)
         await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
         alert(t('options.reset.success', 'Settings have been reset to default'))
       } catch (error) {
@@ -210,7 +211,7 @@ const Options: React.FC = () => {
       <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
         <div className="sticky top-0 p-6">
           <div className="mb-8">
-            <h1 className="text-xl font-bold text-slate-900">Work TODO</h1>
+            <h1 className="text-xl font-bold text-slate-900">Routine Reminder</h1>
             <p className="text-sm text-slate-500">Reminder Settings</p>
           </div>
 
@@ -343,7 +344,7 @@ const Options: React.FC = () => {
 
               <ReminderRulesManager
                 rules={config.reminderRules}
-                onChange={(rules) => setConfig({ ...configRef.current, reminderRules: rules })}
+                onChange={(rules) => updateConfig({ ...configRef.current, reminderRules: rules })}
                 onSave={async (updatedRules) => {
                   // 自动保存规则变更到 storage
                   const newConfig = { ...configRef.current, reminderRules: updatedRules }
@@ -382,7 +383,7 @@ const Options: React.FC = () => {
                     id="template-content"
                     value={config.template.content}
                     onChange={(e) =>
-                      setConfig({
+                      updateConfig({
                         ...configRef.current,
                         template: { ...configRef.current.template, content: e.target.value },
                       })

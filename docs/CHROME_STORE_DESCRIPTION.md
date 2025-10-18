@@ -1,215 +1,172 @@
-# Work TODO Reminder - Chrome Web Store Description
+# Routine Reminder - Chrome Web Store Description
 
 ## English Version
 
 ### Short Description (132 characters max)
 
-Stay productive! Get smart reminders to send your daily work plan. Track completion stats and build streaks. 🔥
+Stay consistent! Custom reminders for daily routines with flexible schedules, templates, and streak tracking. 🔥
 
 ### Detailed Description
 
-**Never Forget Your Daily Work Plan Again! 📝**
+**Design routines that stick. 🔔**
 
-Work TODO Reminder is a smart productivity extension that helps you stay accountable by reminding you to send your daily work plan or TODO list. Perfect for teams that share daily updates!
+Routine Reminder is a flexible Chrome extension for standups, habit tracking, wellness breaks, or any recurring task. Craft your own schedules, templates, and messages so the right reminder appears exactly when you need it.
 
-**✨ Key Features**
+**✨ Key Highlights**
 
-🕐 **Customizable Work Schedule**
+🕐 **Flexible Schedules**
 
-- Set your work days (Mon-Fri by default)
-- Configure reminder start time, deadline, and intervals
-- Add late reminders if you miss the deadline
-- Smart reminder system that won't spam you
+- Pick active days (weekdays, weekends, or custom)
+- Configure start, deadline, and interval per routine
+- Add catch-up reminders after the deadline
+- Works for professional updates and personal rituals alike
 
-📋 **TODO Templates**
+📋 **Smart Templates**
 
-- Pre-built templates in English and Chinese
-- Fully customizable to match your team's format
-- Quick copy-paste functionality
-- Per-rule overrides so each reminder can have a dedicated template
+- Pre-built English & Chinese examples to get started fast
+- Markdown editor for rich, personalised instructions
+- Per-rule overrides for unique copy, toast messages, and links
+- One-click copy from the popup for instant sharing or journaling
 
-🔔 **Multiple Reminder Methods**
+🔔 **Multi-channel Alerts**
 
-- Browser notifications
-- On-page toast notifications (unique!)
-- Badge alerts on extension icon
-- Sound notifications (coming soon)
+- Browser notifications for desktop visibility
+- Toast overlays on active tabs with actionable banners
+- Badge highlights on the extension icon
+- Sound notifications planned for a future update
 
-📊 **Statistics & Streaks**
+📊 **Insightful Analytics**
 
-- Track your completion rate
-- Build and maintain daily streaks 🔥
-- View weekly and monthly statistics
-- Beautiful calendar view of your history
-- Review the last 90 days at a glance
+- Completion rate dashboard
+- Streak counter to celebrate momentum 🔥
+- Weekly & monthly summaries to spot trends
+- 90-day heatmap inspired by GitHub contributions
 
 ⌨️ **Keyboard Shortcuts**
 
-- Ctrl/Cmd+Shift+T: Open extension
-- Ctrl/Cmd+Shift+D: Mark as sent
+- Ctrl/Cmd+Shift+T: Open popup
+- Ctrl/Cmd+Shift+D: Mark today as done
 - Ctrl/Cmd+Shift+O: Open settings
 
-🌐 **Multi-language Support**
+🌐 **Bilingual Experience**
 
-- Full support for English and Chinese
-- Automatic template switching based on language
+- Full English & Chinese localisation
+- Templates and copy auto-match your language preference
 
 🔒 **Privacy First**
 
-- All data stored locally on your device
-- No tracking, no analytics, no cloud sync
-- Export/import your configuration anytime
+- 100% local storage—no accounts, servers, or tracking
+- Import/export routines whenever you need
 
-**Perfect For:**
+**Great for:**
 
-- Remote teams sharing daily standups
-- Developers sending daily updates
-- Project managers tracking team progress
-- Anyone who needs to submit regular reports
+- Daily standups and async team updates
+- Habit building, journaling, gratitude logs
+- Health reminders (stretch, hydrate, take a break)
+- Students planning study blocks or revision
 
 **How It Works:**
 
 1. Install the extension
-2. Configure your work days and reminder times
-3. Customize your TODO template
-4. Get reminded at the right time
-5. Copy and send your work plan
-6. Mark as sent and track your streak!
+2. Create one or more routine rules (days, time window, interval)
+3. Personalise templates and notification messages
+4. Let Routine Reminder nudge you at the right moment
+5. Mark routines as done and watch streaks grow!
 
-**Pro Tips:**
+**Tips:**
 
-- Create separate rules for different update channels
-- Set multiple late reminders to ensure you don't forget
-- Check the Statistics tab to see your progress
-- Use keyboard shortcuts for faster workflow
+- Use separate rules for different channels or goals
+- Chain late reminders for stubborn tasks
+- Visit the statistics tab weekly to reflect and adjust
+- Pin the extension icon for quick access
 
-**What's New in v1.0:**
+**Open Source:** Explore and contribute on GitHub.
 
-- ✅ Statistics dashboard with charts
-- ✅ Keyboard shortcuts for power users
-- ✅ Streamlined options page for quick configuration
-- ✅ History tracking (last 90 days)
-- ✅ Streak counter with gamification
-
-**Open Source:**
-This extension is open source! Check out the code on GitHub and contribute.
-
-**Support:**
-Having issues? Contact us at [support@worktodo.app](mailto:support@worktodo.app) or open an issue on GitHub.
+**Support:** Need help? Email [support@worktodo.app](mailto:support@worktodo.app) or open an issue on GitHub.
 
 ---
 
 ## 中文版本
 
-### 简短描述（132字符以内）
+### 简短描述（132 字符以内）
 
-保持高效！智能提醒您发送每日工作计划。追踪完成统计并建立连续记录。🔥
+坚持下去！自定义每日例行提醒，灵活排程、智能模板与连续记录一应俱全。🔥
 
 ### 详细描述
 
-**再也不会忘记发送每日工作计划！📝**
+**让提醒真正贴合你的节奏。🔔**
 
-Work TODO Reminder 是一个智能生产力扩展程序，通过提醒您发送每日工作计划或待办事项清单，帮助您保持责任感。非常适合分享每日更新的团队！
+Routine Reminder（中文名：日常提醒助手）是一款可高度自定义的 Chrome 扩展，适用于团队站会、习惯养成、健康打卡或任何重复任务。你可以自由设定提醒时间、模板文案与提醒方式，确保关键事项不会被遗忘。
 
-**✨ 核心功能**
+**✨ 核心亮点**
 
-🕐 **可定制的工作时间**
+🕐 **灵活的提醒计划**
 
-- 设置您的工作日（默认周一至周五）
-- 配置提醒开始时间、截止时间和间隔
-- 如果错过截止时间，添加迟到提醒
-- 智能提醒系统，不会打扰您
+- 自由选择例行任务的执行日期（工作日、周末或自定义组合）
+- 为每条规则设置开始时间、截止时间与提醒间隔
+- 截止后追加补提醒，确保不遗漏
+- 同时适用于工作、学习与生活场景
 
-📋 **TODO 模板**
+📋 **智能模板系统**
 
-- 内置中英文模板
-- 完全可定制以匹配您团队的格式
-- 每条提醒规则可使用独立模板
-- 弹窗内一键复制
+- 内置中英双语示例模板
+- 支持 Markdown，自由编写提示脚本
+- 每条提醒规则可配置独立模板、通知文案与链接
+- 弹窗中一键复制，方便分享或记录
 
 🔔 **多种提醒方式**
 
-- 浏览器通知
-- 页面内Toast提醒（独特功能！）
-- 扩展图标徽章提醒
-- 声音通知（即将推出）
+- 浏览器通知：直接弹出系统提醒
+- Toast 通知：在当前标签页显示醒目的提示卡片
+- 扩展图标徽章：显示待完成状态
+- 声音提醒功能即将上线
 
-📊 **统计数据与连续记录**
+📊 **可视化统计**
 
-- 追踪您的完成率
-- 建立并维持每日连续记录 🔥
-- 查看每周和每月统计数据
-- 精美的历史日历视图
-- 90 天历史记录一目了然
+- 完成率仪表盘随时掌握进度
+- 连续记录点燃坚持动力 🔥
+- 周/月统计洞察趋势变化
+- 90 天日历热力图展示历史表现
 
 ⌨️ **键盘快捷键**
 
-- Ctrl/Cmd+Shift+T: 打开扩展
-- Ctrl/Cmd+Shift+D: 标记为已发送
-- Ctrl/Cmd+Shift+O: 打开设置
+- Ctrl/Cmd+Shift+T：打开弹窗
+- Ctrl/Cmd+Shift+D：标记今日完成
+- Ctrl/Cmd+Shift+O：打开设置
 
-🌐 **多语言支持**
+🌐 **中英双语体验**
 
-- 完全支持中英文
-- 根据语言自动切换模板
+- 界面与模板自动匹配语言偏好
+- 更多语言正在规划中
 
 🔒 **隐私优先**
 
-- 所有数据本地存储在您的设备上
-- 无追踪、无分析、无云同步
-- 随时导出/导入您的配置
+- 数据全部存储在本地浏览器
+- 不联网、不上传、不跟踪
+- 随时导出/导入配置
 
-**适合以下人群：**
+**适用场景：**
 
-- 分享每日站会的远程团队
-- 发送每日更新的开发人员
-- 追踪团队进度的项目经理
-- 任何需要提交定期报告的人
+- 每日/每周站会、日报
+- 运动、打卡、喝水等习惯提醒
+- 学习计划、复习安排
+- 个人成长或自我关怀仪式
 
-**工作原理：**
+**使用步骤：**
 
 1. 安装扩展程序
-2. 配置您的工作日和提醒时间
-3. 自定义您的 TODO 模板
-4. 在合适的时间收到提醒
-5. 复制并发送您的工作计划
-6. 标记为已发送并追踪您的连续记录！
+2. 创建提醒规则（日期、时间段、间隔）
+3. 自定义模板与通知文案
+4. 让日常提醒助手在合适的时间出现
+5. 完成任务后标记已完成，连续记录自动更新
 
-**专业提示：**
+**小贴士：**
 
-- 为不同场景创建多条提醒规则
-- 设置多个迟到提醒以确保不会忘记
-- 查看统计标签页以了解您的进度
-- 使用键盘快捷键提高工作效率
+- 为不同目标创建多条规则，互不干扰
+- 通过补提醒拉起“顽固”任务
+- 每周查看统计页，及时优化安排
+- 将图标固定到工具栏，随时查看状态
 
-**v1.0 新功能：**
+**开源社区：** 欢迎在 GitHub 上查看代码并参与贡献。
 
-- ✅ 带图表的统计仪表板
-- ✅ 为高级用户提供的键盘快捷键
-- ✅ 经过打磨的设置页面，几步即可完成配置
-- ✅ 历史追踪（最近90天）
-- ✅ 游戏化的连续计数器
-
-**开源项目：**
-此扩展程序是开源的！在 GitHub 上查看代码并做出贡献。
-
-**支持：**
-遇到问题？请通过 [support@worktodo.app](mailto:support@worktodo.app) 联系我们或在 GitHub 上提出问题。
-
----
-
-## Keywords (5 max)
-
-- productivity
-- todo list
-- work reminder
-- daily standup
-- team collaboration
-
-## Category
-
-Productivity
-
-## Language
-
-English, 中文 (简体)
+**支持：** 如需帮助，请发送邮件至 [support@worktodo.app](mailto:support@worktodo.app) 或在 GitHub 提交 Issue。
