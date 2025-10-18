@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AppConfig, DailyState, ReminderRule } from '@/types'
 import { getConfig, getDailyState } from '@/utils/storage'
-import { formatTime, getTimeUntilDeadline, isWorkDay, getNextReminderTime } from '@/utils/time'
+import { formatTime, isWorkDay, getNextReminderTime } from '@/utils/time'
 
 const Popup: React.FC = () => {
   const { t } = useTranslation()
@@ -183,21 +183,45 @@ const Popup: React.FC = () => {
   // 获取今天会触发的规则的截止时间（必须是今天的工作日）
   const nextActiveRule = getNextActiveRule()
   const todayActiveRule = getTodayActiveRule() // 用于显示规则信息
-  const timeUntilDeadline = nextActiveRule
-    ? getTimeUntilDeadline(nextActiveRule)
-    : { isPastDeadline: true, hours: 0, minutes: 0 }
+
+  // 计算距离下一次提醒的时间，而不是距离deadline
+  const getTimeUntilNextReminder = (): {
+    isPastDeadline: boolean
+    hours: number
+    minutes: number
+  } => {
+    if (!nextActiveRule) {
+      return { isPastDeadline: true, hours: 0, minutes: 0 }
+    }
+
+    const nextTime = getNextReminderTime(currentTime, nextActiveRule, state)
+    if (!nextTime) {
+      return { isPastDeadline: true, hours: 0, minutes: 0 }
+    }
+
+    const diff = nextTime.getTime() - currentTime.getTime()
+    if (diff <= 0) {
+      return { isPastDeadline: true, hours: 0, minutes: 0 }
+    }
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    return { isPastDeadline: false, hours, minutes }
+  }
+
+  const timeUntilNext = getTimeUntilNextReminder()
 
   const getDeadlineText = () => {
-    if (timeUntilDeadline.isPastDeadline) {
+    if (timeUntilNext.isPastDeadline) {
       return t('popup.status.pastDeadline')
     }
-    if (timeUntilDeadline.hours > 0) {
+    if (timeUntilNext.hours > 0) {
       return t('popup.status.timeRemaining', {
-        hours: timeUntilDeadline.hours,
-        minutes: timeUntilDeadline.minutes,
+        hours: timeUntilNext.hours,
+        minutes: timeUntilNext.minutes,
       })
     }
-    return t('popup.status.minutesRemaining', { minutes: timeUntilDeadline.minutes })
+    return t('popup.status.minutesRemaining', { minutes: timeUntilNext.minutes })
   }
 
   return (

@@ -1,5 +1,7 @@
 import type { ReminderRule, DailyState } from '@/types'
 
+const MINUTES_IN_DAY = 24 * 60
+
 /**
  * 判断指定日期是否为工作日
  */
@@ -70,40 +72,64 @@ export function getNextReminderTime(now: Date, rule: ReminderRule, state: DailyS
 
   const currentMinutes = getCurrentMinutes(now)
   const startMinutes = parseTime(rule.startTime)
-  const deadlineMinutes = parseTime(rule.deadline)
+  let deadlineMinutes = parseTime(rule.deadline)
+  const originalDeadlineMinutes = deadlineMinutes
+
+  // 处理跨午夜情况
+  const isCrossMidnight = deadlineMinutes < startMinutes
+  if (isCrossMidnight) {
+    deadlineMinutes += MINUTES_IN_DAY
+  }
 
   // 如果还没到开始时间，返回开始时间
   if (currentMinutes < startMinutes) {
     return createDateFromMinutes(startMinutes, now)
   }
 
+  // 调整当前时间（如果规则跨午夜且当前时间在午夜后）
+  let adjustedCurrentMinutes = currentMinutes
+  if (isCrossMidnight && currentMinutes < startMinutes) {
+    adjustedCurrentMinutes += MINUTES_IN_DAY
+  }
+
   // 如果在开始时间和截止时间之间，计算下一个间隔提醒时间
-  if (currentMinutes < deadlineMinutes) {
+  if (adjustedCurrentMinutes < deadlineMinutes) {
     // 检查当前时间是否刚好是一个提醒时间点（在间隔点上）
-    const minutesSinceStart = currentMinutes - startMinutes
+    const minutesSinceStart = adjustedCurrentMinutes - startMinutes
     if (minutesSinceStart >= 0 && minutesSinceStart % rule.interval === 0) {
       // 当前时间就是提醒时间点，返回当前时间
       return createDateFromMinutes(currentMinutes, now)
     }
 
     // 否则返回下一个间隔时间点
-    const nextMinutes = currentMinutes + rule.interval
+    const minutesUntilNext = rule.interval - (minutesSinceStart % rule.interval)
+    const nextMinutes = adjustedCurrentMinutes + minutesUntilNext
+
     if (nextMinutes <= deadlineMinutes) {
-      return createDateFromMinutes(nextMinutes, now)
+      const actualNextMinutes = currentMinutes + minutesUntilNext
+      return createDateFromMinutes(actualNextMinutes, now)
     }
     // 如果下一个间隔超过截止时间，直接使用第一个迟到提醒时间
   }
 
   // 查找下一个迟到提醒时间
-  const lateReminderMinutes = rule.lateReminders.map(parseTime)
+  const lateReminderMinutes = rule.lateReminders.map((timeStr) => {
+    let minutes = parseTime(timeStr)
+    if (isCrossMidnight && minutes <= originalDeadlineMinutes) {
+      minutes += MINUTES_IN_DAY
+    }
+    return minutes
+  })
 
   // 首先检查当前时间是否刚好是一个迟到提醒时间点
-  if (lateReminderMinutes.includes(currentMinutes)) {
+  if (lateReminderMinutes.includes(adjustedCurrentMinutes)) {
     return createDateFromMinutes(currentMinutes, now)
   }
 
   // 否则查找下一个迟到提醒时间
-  const nextLateReminder = lateReminderMinutes.filter((minutes) => minutes > currentMinutes).sort((a, b) => a - b)
+  const nextLateReminder = lateReminderMinutes
+    .filter((minutes) => minutes > adjustedCurrentMinutes)
+    .sort((a, b) => a - b)
 
   if (nextLateReminder.length > 0) {
     return createDateFromMinutes(nextLateReminder[0], now)
@@ -122,18 +148,28 @@ export function getTodayReminderTimes(rule: ReminderRule): Date[] {
 
   const times: Date[] = []
   const startMinutes = parseTime(rule.startTime)
-  const deadlineMinutes = parseTime(rule.deadline)
+  let deadlineMinutes = parseTime(rule.deadline)
+  const isCrossMidnight = deadlineMinutes < startMinutes
+  if (isCrossMidnight) {
+    deadlineMinutes += MINUTES_IN_DAY
+  }
+
+  const baseDate = new Date(now)
+  baseDate.setHours(0, 0, 0, 0)
 
   // 添加常规提醒时间
   for (let minutes = startMinutes; minutes <= deadlineMinutes; minutes += rule.interval) {
-    times.push(createDateFromMinutes(minutes, now))
+    times.push(createDateFromMinutes(minutes, baseDate))
   }
 
   // 添加迟到提醒时间
   rule.lateReminders.forEach((timeStr) => {
     const minutes = parseTime(timeStr)
-    if (minutes > deadlineMinutes) {
-      times.push(createDateFromMinutes(minutes, now))
+    if (!isCrossMidnight && minutes > deadlineMinutes) {
+      times.push(createDateFromMinutes(minutes, baseDate))
+    } else if (isCrossMidnight) {
+      const adjusted = minutes <= parseTime(rule.deadline) ? minutes + MINUTES_IN_DAY : minutes
+      times.push(createDateFromMinutes(adjusted, baseDate))
     }
   })
 
@@ -160,8 +196,22 @@ export function getTimeUntilDeadline(rule: ReminderRule): {
   minutes: number
 } {
   const now = new Date()
-  const deadlineMinutes = parseTime(rule.deadline)
-  const deadline = createDateFromMinutes(deadlineMinutes, now)
+  const currentMinutes = getCurrentMinutes(now)
+  const startMinutes = parseTime(rule.startTime)
+  const deadlineMinutesRaw = parseTime(rule.deadline)
+  const isCrossMidnight = deadlineMinutesRaw < startMinutes
+
+  const baseDate = new Date(now)
+  baseDate.setHours(0, 0, 0, 0)
+
+  const deadlineBase = new Date(baseDate)
+
+  // 只有在跨午夜且当前时间>=开始时间时，deadline才在"明天"
+  if (isCrossMidnight && currentMinutes >= startMinutes) {
+    deadlineBase.setDate(deadlineBase.getDate() + 1)
+  }
+
+  const deadline = createDateFromMinutes(deadlineMinutesRaw, deadlineBase)
 
   if (now > deadline) {
     return { isPastDeadline: true, hours: 0, minutes: 0 }
