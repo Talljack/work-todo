@@ -1,8 +1,8 @@
 {
   "extensionName": {
-    "message": "工作 TODO 提醒"
+    "message": "日常提醒助手"
   },
   "extensionDescription": {
-    "message": "智能提醒，准时发送每日工作计划"
+    "message": "自定义提醒，帮你坚持每日例行任务"
   }
 }

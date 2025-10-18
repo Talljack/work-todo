@@ -94,23 +94,23 @@ export const getDefaultTemplateContent = (lang?: string): string => {
 
   if (language.startsWith('zh')) {
     console.log('  → Returning CHINESE template')
-    return `【昨日回顾】
+    return `【今日重点】
 - 
 
-【今日计划】
+【例行任务】
 - 
 
-【风险与需求】
+【备注】
 - `
   }
   console.log('  → Returning ENGLISH template')
-  return `[Yesterday's Review]
+  return `[Today's Focus]
 - 
 
-[Today's Plan]
+[Routine Tasks]
 - 
 
-[Risks & Requirements]
+[Notes]
 - `
 }
 
@@ -126,10 +126,10 @@ export const getDefaultToastMessage = (lang?: string): string => {
 
   if (language.startsWith('zh')) {
     console.log('  → Returning CHINESE message')
-    return '别忘了发送今日工作计划！点击这里打开扩展。'
+    return '别忘了今天的例行任务！点击查看详情。'
   }
   console.log('  → Returning ENGLISH message')
-  return "Don't forget to send today's work plan! Click here to open the extension."
+  return "Don't forget today's routine! Tap to check in."
 }
 
 /**
@@ -144,18 +144,18 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
 
   return {
     id: `rule-${Date.now()}`,
-    name: isChinese ? '工作计划提醒' : 'Work Plan Reminder',
+    name: isChinese ? '每日例行提醒' : 'Daily Routine Reminder',
     enabled: true,
-    workDays: [true, true, true, true, true, false, false], // Mon-Fri
+    workDays: [true, true, true, true, true, true, true], // Every day
     startTime: '09:00',
-    interval: 15,
+    interval: 30,
     deadline: '10:00',
-    lateReminders: ['10:30', '11:00'],
-    notificationTitle: isChinese ? '提醒：发送今日 TODO' : "Reminder: Send Today's TODO",
+    lateReminders: ['12:00'],
+    notificationTitle: isChinese ? '提醒：今日例行检查' : 'Reminder: Daily routine check-in',
     notificationMessage: isChinese
-      ? '别忘了发送今日工作计划！点击打开扩展。'
-      : "Don't forget to send your daily work plan! Click to open.",
-    toastMessage: isChinese ? '别忘了发送今日工作计划！' : "Don't forget to send your work plan!",
+      ? '别忘了今天的例行任务！点击查看详情。'
+      : "It's time for your daily routine. Click to review.",
+    toastMessage: isChinese ? '别忘了完成今日例行任务！' : "Don't forget today's routine!",
     toastDuration: 10,
     toastClickUrl: '', // 可选的 URL
     templateContent: getDefaultTemplateContent(language), // 使用默认模板

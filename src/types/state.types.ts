@@ -4,7 +4,7 @@
 export interface DailyState {
   /** 日期，格式 "YYYY-MM-DD" */
   date: string
-  /** 是否已发送 */
+  /** 是否已完成 */
   sent: boolean
   /** 最后提醒时间（ISO 字符串） */
   lastRemindTime?: string
@@ -16,7 +16,7 @@ export interface DailyState {
 export interface HistoryRecord {
   /** 日期，格式 "YYYY-MM-DD" */
   date: string
-  /** 是否已发送 */
+  /** 是否已完成 */
   sent: boolean
   /** 发送时间（ISO 字符串） */
   sentAt?: string

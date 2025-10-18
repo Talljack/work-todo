@@ -201,7 +201,7 @@ describe('Multi-Rule System Tests', () => {
       const rules: ReminderRule[] = [
         createTestRule({
           id: 'rule-1',
-          name: 'Work Plan',
+          name: 'Daily Routine',
           startTime: '09:00',
           deadline: '10:00',
         }),
@@ -224,7 +224,7 @@ describe('Multi-Rule System Tests', () => {
       })
 
       expect(rulesToRemind.length).toBe(2)
-      expect(rulesToRemind.map((r) => r.name)).toContain('Work Plan')
+      expect(rulesToRemind.map((r) => r.name)).toContain('Daily Routine')
       expect(rulesToRemind.map((r) => r.name)).toContain('Medicine Reminder')
     })
 
@@ -335,7 +335,7 @@ describe('Multi-Rule System Tests', () => {
 
     test('Scenario: Work plan reminder (9-10am, every 15 min)', () => {
       const rule = createTestRule({
-        name: '工作计划提醒',
+        name: '例行任务提醒',
         workDays: [true, true, true, true, true, false, false],
         startTime: '09:00',
         interval: 15,

@@ -73,19 +73,19 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
 
     reminderRules.push({
       id: `rule-${Date.now()}`,
-      name: isChinese ? '工作计划提醒' : 'Work Plan Reminder',
+      name: isChinese ? '每日例行提醒' : 'Daily Routine Reminder',
       enabled: true,
       workDays: oldWorkDays.enabled,
       startTime: oldWorkDays.startTime,
       interval: oldWorkDays.interval,
       deadline: oldWorkDays.deadline,
       lateReminders: oldWorkDays.lateReminders,
-      notificationTitle: isChinese ? '提醒：发送今日 TODO' : "Reminder: Send Today's TODO",
+      notificationTitle: isChinese ? '提醒：今日例行检查' : 'Reminder: Daily routine check-in',
       notificationMessage: isChinese
-        ? '别忘了发送今日工作计划！点击打开扩展。'
-        : "Don't forget to send your daily work plan! Click to open.",
+        ? '别忘了今天的例行任务！点击查看详情。'
+        : "It's time for your daily routine. Click to review.",
       toastMessage:
-        oldWorkDays.toastMessage || (isChinese ? '别忘了发送今日工作计划！' : "Don't forget to send your work plan!"),
+        oldWorkDays.toastMessage || (isChinese ? '别忘了完成今日例行任务！' : "Don't forget today's routine!"),
       toastDuration: oldWorkDays.toastDuration || 10,
       toastClickUrl: globalQuickLinks.length > 0 ? globalQuickLinks[0].url : '',
     })
@@ -115,7 +115,7 @@ describe('Configuration Migration Tests', () => {
           deadline: '10:00',
           lateReminders: ['10:30', '11:00'],
           toastDuration: 10,
-          toastMessage: '别忘了发送今日工作计划！',
+          toastMessage: '别忘了发送今日例行任务！',
         },
         template: {
           content: '测试模板',
@@ -134,14 +134,14 @@ describe('Configuration Migration Tests', () => {
       const rule = migratedConfig.reminderRules[0]
 
       // 验证规则字段正确迁移
-      expect(rule.name).toBe('工作计划提醒')
+      expect(rule.name).toBe('例行任务提醒')
       expect(rule.enabled).toBe(true)
       expect(rule.workDays).toEqual([true, true, true, true, true, false, false])
       expect(rule.startTime).toBe('09:00')
       expect(rule.interval).toBe(15)
       expect(rule.deadline).toBe('10:00')
       expect(rule.lateReminders).toEqual(['10:30', '11:00'])
-      expect(rule.toastMessage).toBe('别忘了发送今日工作计划！')
+      expect(rule.toastMessage).toBe('别忘了发送今日例行任务！')
       expect(rule.toastDuration).toBe(10)
       expect(rule.toastClickUrl).toBe('')
 
@@ -356,7 +356,7 @@ describe('Configuration Migration Tests', () => {
           deadline: '10:00',
           lateReminders: ['10:30', '11:00'],
           toastDuration: 10,
-          toastMessage: '别忘了发送今日工作计划！点击这里打开扩展。',
+          toastMessage: '别忘了发送今日例行任务！点击这里打开扩展。',
         },
         template: {
           content: '【昨日回顾】\n- \n\n【今日计划】\n- \n\n【风险与需求】\n- ',
@@ -368,7 +368,7 @@ describe('Configuration Migration Tests', () => {
 
       expect(result.version).toBe(4)
       expect(result.reminderRules).toHaveLength(1)
-      expect(result.reminderRules[0].name).toBe('工作计划提醒')
+      expect(result.reminderRules[0].name).toBe('例行任务提醒')
       expect(result.reminderRules[0].workDays).toEqual([true, true, true, true, true, false, false])
       expect(result.reminderRules[0].toastClickUrl).toBe('')
     })

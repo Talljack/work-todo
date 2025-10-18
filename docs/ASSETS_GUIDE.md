@@ -80,8 +80,8 @@ Text: #111827 (Tailwind gray-900)
 1. **Background**: Gradient from #3B82F6 to #1E40AF
 2. **Extension Icon**: Place in left or center (96x96px scaled)
 3. **Text Overlay**:
-   - "Work TODO Reminder"
-   - Tagline: "Never Forget Your Daily Work Plan"
+   - "Routine Reminder"
+   - Tagline: "Build Daily Routines That Stick"
 4. **Visual**: Small screenshot or mockup of popup
 5. **Call-to-action**: Not needed (implied by store button)
 
@@ -96,9 +96,9 @@ Text: #111827 (Tailwind gray-900)
 
 ```
 ┌─────────────────────────────────────────────┐
-│  [Icon]    Work TODO Reminder               │
+│  [Icon]    Routine Reminder               │
 │            Never Forget Your                │
-│            Daily Work Plan                  │
+│            Daily Routine                    │
 │                                             │
 │         [Mini screenshot of popup]          │
 │                                             │
@@ -127,7 +127,7 @@ Text: #111827 (Tailwind gray-900)
 │                                                           │
 │   [Icon 128px]                                           │
 │                                                           │
-│        Work TODO Reminder                                │
+│        Routine Reminder                                │
 │        Stay Productive with Smart Daily Reminders        │
 │                                                           │
 │   🔔 Customizable    📊 Statistics    🔥 Streaks        │
@@ -229,9 +229,9 @@ If you have the chrome-devtools MCP server configured:
 **What to Show:**
 
 - Extension popup in its default state
-- Show a sample TODO template filled in
+- Show a sample routine template filled in
 - Quick links section visible
-- "Mark as Sent" button prominent
+- "Mark as Done" button prominent
 - Clean, organized layout
 
 **Tips:**
@@ -243,7 +243,7 @@ If you have the chrome-devtools MCP server configured:
 
 **Caption for Store:**
 
-> "Quick access popup with TODO template and one-click copying"
+> "Quick access popup with routine template and one-click copying"
 
 ### Screenshot 2: Settings Page - Settings Tab (Priority: High)
 
@@ -252,7 +252,7 @@ If you have the chrome-devtools MCP server configured:
 - Settings tab active
 - Work days selection visible
 - Reminder times configured
-- Some quick links added
+- Example late reminders displayed
 - Language selector
 
 **Tips:**
@@ -443,7 +443,7 @@ If using these images on a website, provide descriptive alt text:
 ```html
 <img
   src="screenshot-popup.png"
-  alt="Work TODO Reminder popup window showing daily task template with quick links and Mark as Sent button"
+  alt="Routine Reminder popup showing daily template, active rule details, and Mark as Done button"
 />
 ```
 
@@ -518,7 +518,7 @@ work-todo-reminder/
 
 ### Screenshot Captions
 
-1. **Popup**: "Access your daily TODO template and quick links instantly"
+1. **Popup**: "Access your daily routine template and upcoming reminder details instantly"
 2. **Settings**: "Customize work days, reminder times, and notification preferences"
 3. **Statistics**: "Track completion rates, build streaks, and visualize your progress"
 4. **Onboarding**: "New users are guided through setup with interactive tutorials"
@@ -528,7 +528,7 @@ work-todo-reminder/
 
 **Headline Options:**
 
-- "Never Miss Your Daily Work Plan Again"
+- "Never Miss Your Daily Routine Again"
 - "Stay Accountable with Smart TODO Reminders"
 - "Build Productivity Streaks, One Day at a Time"
 - "Your Daily Standup Reminder, Simplified"

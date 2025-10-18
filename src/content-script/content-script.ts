@@ -80,7 +80,7 @@ browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) 
             React.createElement(
               'div',
               { style: { fontWeight: 600, fontSize: '16px', marginBottom: '4px' } },
-              '工作 TODO 提醒',
+              '日常提醒助手',
             ),
             React.createElement('div', { style: { opacity: 0.95, lineHeight: 1.5 } }, msg.message || ''),
           ),
@@ -118,4 +118,4 @@ browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) 
   return true
 })
 
-console.log('Work TODO Reminder content script loaded')
+console.log('Routine Reminder content script loaded')

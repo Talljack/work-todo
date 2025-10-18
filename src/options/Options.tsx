@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircledIcon,
@@ -29,10 +29,15 @@ const Options: React.FC = () => {
   const { t, i18n } = useTranslation()
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [activeSection, setActiveSection] = useState<NavigationSection>('general')
   const [version, setVersion] = useState('1.0.0')
+  const configRef = useRef<AppConfig>(config) // 保存最新的 config 引用
+
+  // 更新 config 的辅助函数，同时更新 state 和 ref
+  const updateConfig = (newConfig: AppConfig) => {
+    configRef.current = newConfig // 立即同步更新 ref
+    setConfig(newConfig) // 异步更新 state
+  }
 
   // 获取扩展版本号
   useEffect(() => {
@@ -40,23 +45,37 @@ const Options: React.FC = () => {
     setVersion(manifest.version)
   }, [])
 
-  // 切换语言并自动更新模板
-  const handleLanguageChange = (lang: string) => {
+  // 切换语言并自动保存
+  const handleLanguageChange = async (lang: string) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('language', lang)
 
     // 自动更新模板为新语言
-    handleResetTemplate(lang)
+    const defaultContent = getDefaultTemplateContent(lang)
+    const newConfig = {
+      ...configRef.current,
+      template: { ...configRef.current.template, content: defaultContent },
+    }
+    updateConfig(newConfig)
+
+    // 自动保存
+    await saveConfig(newConfig)
+    await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
   }
 
   // 重置为默认模板（根据当前语言）
-  const handleResetTemplate = (language?: string) => {
+  const handleResetTemplate = async (language?: string) => {
     const lang = language || i18n.language
     const defaultContent = getDefaultTemplateContent(lang)
-    setConfig({
-      ...config,
-      template: { ...config.template, content: defaultContent },
-    })
+    const newConfig = {
+      ...configRef.current,
+      template: { ...configRef.current.template, content: defaultContent },
+    }
+    updateConfig(newConfig)
+
+    // 自动保存
+    await saveConfig(newConfig)
+    await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
   }
 
   // 加载配置
@@ -64,7 +83,7 @@ const Options: React.FC = () => {
     const loadConfig = async () => {
       try {
         const cfg = await getConfig()
-        setConfig(cfg)
+        updateConfig(cfg)
       } catch (error) {
         console.error('Failed to load config:', error)
       } finally {
@@ -74,22 +93,22 @@ const Options: React.FC = () => {
     loadConfig()
   }, [])
 
-  // 保存配置
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      await saveConfig(config)
-      // 通知后台重新初始化
-      await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch (error) {
-      console.error('Failed to save config:', error)
-      alert(t('options.save.error'))
-    } finally {
-      setSaving(false)
-    }
-  }
+  // 自动保存模板内容（防抖）
+  useEffect(() => {
+    if (loading) return // 避免初次加载时保存
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        // 使用 ref 获取最新的 config，避免保存闭包中的旧快照
+        await saveConfig(configRef.current)
+        await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+      } catch (error) {
+        console.error('Failed to auto-save template:', error)
+      }
+    }, 1000) // 1秒防抖
+
+    return () => clearTimeout(timeoutId)
+  }, [config.template.content, loading])
 
   // 导出配置
   const handleExport = async () => {
@@ -121,7 +140,7 @@ const Options: React.FC = () => {
         const text = await file.text()
         await importConfig(text)
         const newConfig = await getConfig()
-        setConfig(newConfig)
+        updateConfig(newConfig)
         alert(t('options.import.success'))
         // 重新初始化闹钟
         await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
@@ -142,7 +161,7 @@ const Options: React.FC = () => {
     ) {
       try {
         await saveConfig(DEFAULT_CONFIG)
-        setConfig(DEFAULT_CONFIG)
+        updateConfig(DEFAULT_CONFIG)
         await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
         alert(t('options.reset.success', 'Settings have been reset to default'))
       } catch (error) {
@@ -192,7 +211,7 @@ const Options: React.FC = () => {
       <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
         <div className="sticky top-0 p-6">
           <div className="mb-8">
-            <h1 className="text-xl font-bold text-slate-900">Work TODO</h1>
+            <h1 className="text-xl font-bold text-slate-900">Routine Reminder</h1>
             <p className="text-sm text-slate-500">Reminder Settings</p>
           </div>
 
@@ -325,7 +344,14 @@ const Options: React.FC = () => {
 
               <ReminderRulesManager
                 rules={config.reminderRules}
-                onChange={(rules) => setConfig({ ...config, reminderRules: rules })}
+                onChange={(rules) => updateConfig({ ...configRef.current, reminderRules: rules })}
+                onSave={async (updatedRules) => {
+                  // 自动保存规则变更到 storage
+                  const newConfig = { ...configRef.current, reminderRules: updatedRules }
+                  await saveConfig(newConfig)
+                  // 通知后台重新初始化
+                  await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+                }}
               />
             </div>
           )}
@@ -357,9 +383,9 @@ const Options: React.FC = () => {
                     id="template-content"
                     value={config.template.content}
                     onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        template: { ...config.template, content: e.target.value },
+                      updateConfig({
+                        ...configRef.current,
+                        template: { ...configRef.current.template, content: e.target.value },
                       })
                     }
                     rows={12}
@@ -381,24 +407,6 @@ const Options: React.FC = () => {
               <Statistics />
             </div>
           )}
-        </div>
-
-        {/* 固定底部保存按钮 */}
-        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg">
-          <div className="mx-auto max-w-4xl px-8 py-4 flex items-center justify-between">
-            <div className="flex-1">
-              {saved && (
-                <div className="flex items-center gap-2 text-sm font-medium text-green-600">
-                  <CheckCircledIcon className="h-5 w-5" />
-                  <span>{t('options.save.success')}</span>
-                </div>
-              )}
-            </div>
-            <Button type="button" size="lg" onClick={handleSave} disabled={saving} className="min-w-[140px]">
-              {saving && <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? t('options.save.saving') : t('options.save.button')}
-            </Button>
-          </div>
         </div>
       </main>
     </div>

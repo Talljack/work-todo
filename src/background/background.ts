@@ -123,11 +123,11 @@ async function handleReminder(): Promise<void> {
       priority: 2,
     })
 
-    // 2. 在所有活动标签页显示 Toast 提醒
+    // 2. 在所有标签页显示 Toast 提醒
     try {
-      const tabs = await browser.tabs.query({ active: true })
+      const tabs = await browser.tabs.query({})
       for (const tab of tabs) {
-        if (tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+        if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
           await browser.tabs
             .sendMessage(tab.id, {
               type: 'SHOW_TOAST',

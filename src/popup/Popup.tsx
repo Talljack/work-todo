@@ -14,6 +14,7 @@ const Popup: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [isRuleDetailsExpanded, setIsRuleDetailsExpanded] = useState(false) // 规则详情折叠状态，默认折叠
 
   // 加载配置和状态
   useEffect(() => {
@@ -94,6 +95,7 @@ const Popup: React.FC = () => {
   })
 
   // 获取即将触发的规则（下一个提醒时间最早的规则）
+  // 用于确定提醒时间和Mark as Done按钮
   const getNextActiveRule = (): ReminderRule | null => {
     const now = new Date()
     let earliestTime: Date | null = null
@@ -114,11 +116,62 @@ const Popup: React.FC = () => {
     return earliestRule
   }
 
+  // 获取今天激活的规则（用于显示规则信息，不受sent状态影响）
+  const getTodayActiveRule = (): ReminderRule | null => {
+    const now = new Date()
+    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+
+    // 找出今天启用的、符合工作日设置的规则
+    for (const rule of config.reminderRules) {
+      if (!rule.enabled) continue
+      if (!isWorkDay(now, rule)) continue
+
+      // 解析规则的时间
+      const [startHour, startMin] = rule.startTime.split(':').map(Number)
+      const [deadlineHour, deadlineMin] = rule.deadline.split(':').map(Number)
+      const startMinutes = startHour * 60 + startMin
+      let deadlineMinutes = deadlineHour * 60 + deadlineMin
+
+      // 处理跨午夜情况（例如 23:30 - 00:30）
+      if (deadlineMinutes < startMinutes) {
+        deadlineMinutes += 24 * 60
+      }
+
+      // 检查当前时间是否在开始时间之后
+      let adjustedCurrentMinutes = currentMinutes
+      if (currentMinutes < startMinutes && deadlineMinutes >= 24 * 60) {
+        // 如果当前时间在午夜后，且规则跨午夜，需要调整
+        adjustedCurrentMinutes += 24 * 60
+      }
+
+      // 检查是否在活动时间范围内（包括迟到提醒时间）
+      const lateReminders = rule.lateReminders || []
+      let latestMinutes = deadlineMinutes
+
+      if (lateReminders.length > 0) {
+        // 找到最晚的迟到提醒时间
+        const lateMinutes = lateReminders.map((time) => {
+          const [h, m] = time.split(':').map(Number)
+          let mins = h * 60 + m
+          if (mins < startMinutes) mins += 24 * 60 // 跨午夜
+          return mins
+        })
+        latestMinutes = Math.max(deadlineMinutes, ...lateMinutes)
+      }
+
+      if (adjustedCurrentMinutes >= startMinutes && adjustedCurrentMinutes <= latestMinutes) {
+        return rule
+      }
+    }
+
+    return null
+  }
+
   // 获取要显示的模板内容
   const getTemplateContent = (): string => {
-    const activeRule = getNextActiveRule()
+    const activeRule = getTodayActiveRule()
 
-    // 如果有即将触发的规则且该规则有自定义模板，使用规则的模板
+    // 如果有今天激活的规则且该规则有自定义模板，使用规则的模板
     if (activeRule?.templateContent) {
       return activeRule.templateContent
     }
@@ -129,6 +182,7 @@ const Popup: React.FC = () => {
 
   // 获取今天会触发的规则的截止时间（必须是今天的工作日）
   const nextActiveRule = getNextActiveRule()
+  const todayActiveRule = getTodayActiveRule() // 用于显示规则信息
   const timeUntilDeadline = nextActiveRule
     ? getTimeUntilDeadline(nextActiveRule)
     : { isPastDeadline: true, hours: 0, minutes: 0 }
@@ -147,7 +201,7 @@ const Popup: React.FC = () => {
   }
 
   return (
-    <div className="w-96 bg-gray-50">
+    <div className="w-[480px] bg-gray-50 max-h-[600px] overflow-y-auto">
       {/* 头部状态 */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6">
         <div className="flex items-center justify-between mb-2">
@@ -212,6 +266,74 @@ const Popup: React.FC = () => {
 
       {/* 主体内容 */}
       <div className="p-6 space-y-4">
+        {/* 当前激活的规则信息 */}
+        {todayActiveRule && (
+          <div className="card">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
+                <div className="text-lg font-bold text-primary-700">{todayActiveRule.name}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {todayActiveRule.startTime} - {todayActiveRule.deadline} · Every {todayActiveRule.interval} min
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRuleDetailsExpanded(!isRuleDetailsExpanded)}
+                className="ml-2 text-gray-500 hover:text-gray-700 transition-colors p-1"
+                title={isRuleDetailsExpanded ? 'Collapse' : 'Expand'}
+              >
+                <svg
+                  className={`w-5 h-5 transition-transform ${isRuleDetailsExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 详细信息 - 只在展开时显示 */}
+            {isRuleDetailsExpanded && (
+              <>
+                {/* 通知设置 */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-xs font-semibold text-gray-600 mb-2">
+                    {t('popup.notificationSettings', 'Notification Settings')}
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Title</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.notificationTitle}</div>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.notificationMessage}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toast设置 */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-xs font-semibold text-gray-600 mb-2">
+                    {t('popup.toastSettings', 'Toast Settings')}
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.toastMessage}</div>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                      <div className="text-xs font-medium text-gray-500 mb-1">Duration</div>
+                      <div className="text-sm text-gray-800">{todayActiveRule.toastDuration}s</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* TODO 模板 */}
         <div className="card">
           <div className="flex items-center justify-between mb-3">
