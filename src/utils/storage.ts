@@ -23,17 +23,42 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     (typeof navigator !== 'undefined' ? navigator.language : 'en')
   const isChinese = currentLang.startsWith('zh')
 
-  // 如果已经是最新版本（v4），直接返回
-  if (oldConfig.version && oldConfig.version >= 4 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+  // 如果已经是最新版本（v5），直接返回
+  if (oldConfig.version && oldConfig.version >= 5 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     return {
       ...DEFAULT_CONFIG,
       ...oldConfig,
     } as AppConfig
   }
 
-  // v3 -> v4: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
+  // v4 -> v5: 为每个规则添加 templateContent 字段（如果没有的话）
+  if (oldConfig.version === 4 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+    console.log('[migrateConfig] Migrating from v4 to v5')
+
+    const migratedRules = oldConfig.reminderRules.map((rule) => {
+      return {
+        ...rule,
+        // 如果规则没有 templateContent，使用全局模板作为默认值
+        templateContent: rule.templateContent || oldConfig.template?.content || getDefaultTemplateContent(currentLang),
+      }
+    })
+
+    const newConfig: AppConfig = {
+      version: 5,
+      reminderRules: migratedRules,
+      template: {
+        content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
+      },
+      timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+    }
+
+    console.log('[migrateConfig] v4 -> v5 migration complete', newConfig)
+    return newConfig
+  }
+
+  // v3 -> v5: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
   if (oldConfig.version === 3 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
-    console.log('[migrateConfig] Migrating from v3 to v4')
+    console.log('[migrateConfig] Migrating from v3 to v5')
 
     const migratedRules = oldConfig.reminderRules.map((rule) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,11 +69,12 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
       return {
         ...ruleWithoutQuickLinks,
         toastClickUrl: oldQuickLinks.length > 0 ? oldQuickLinks[0].url : '',
+        templateContent: oldConfig.template?.content || getDefaultTemplateContent(currentLang),
       }
     })
 
     const newConfig: AppConfig = {
-      version: 4,
+      version: 5,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
@@ -56,13 +82,13 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
     }
 
-    console.log('[migrateConfig] v3 -> v4 migration complete', newConfig)
+    console.log('[migrateConfig] v3 -> v5 migration complete', newConfig)
     return newConfig
   }
 
-  // v2 -> v3 -> v4: 将 template.quickLinks 迁移到 toastClickUrl
+  // v2 -> v5: 将 template.quickLinks 迁移到 toastClickUrl
   if (oldConfig.version === 2 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
-    console.log('[migrateConfig] Migrating from v2 to v4')
+    console.log('[migrateConfig] Migrating from v2 to v5')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalQuickLinks = (oldConfig.template as any)?.quickLinks || []
@@ -71,11 +97,12 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
       return {
         ...rule,
         toastClickUrl: globalQuickLinks.length > 0 ? globalQuickLinks[0].url : '',
+        templateContent: oldConfig.template?.content || getDefaultTemplateContent(currentLang),
       }
     })
 
     return {
-      version: 4,
+      version: 5,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
@@ -84,8 +111,8 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     }
   }
 
-  // v1 -> v4: 将旧的 workDays 配置转换为一个 ReminderRule
-  console.log('[migrateConfig] Migrating from v1 to v4')
+  // v1 -> v5: 将旧的 workDays 配置转换为一个 ReminderRule
+  console.log('[migrateConfig] Migrating from v1 to v5')
 
   const reminderRules: ReminderRule[] = []
 
@@ -111,6 +138,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
         oldWorkDays.toastMessage || (isChinese ? '别忘了发送今日工作计划！' : "Don't forget to send your work plan!"),
       toastDuration: oldWorkDays.toastDuration || 10,
       toastClickUrl: globalQuickLinks.length > 0 ? globalQuickLinks[0].url : '',
+      templateContent: oldConfig.template?.content || getDefaultTemplateContent(currentLang),
     })
   } else {
     // 如果没有旧配置，使用默认规则
@@ -118,7 +146,7 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
   }
 
   const newConfig: AppConfig = {
-    version: 4,
+    version: 5,
     reminderRules,
     template: {
       content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
@@ -155,7 +183,7 @@ export async function getConfig(): Promise<AppConfig> {
       const config = migrateConfig(saved)
 
       // 如果是迁移的配置，自动保存新格式
-      if (!saved.version || saved.version < 4) {
+      if (!saved.version || saved.version < 5) {
         console.log('[getConfig] Saving migrated config')
         await saveConfig(config)
       }

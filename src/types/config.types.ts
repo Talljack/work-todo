@@ -28,6 +28,8 @@ export interface ReminderRule {
   toastDuration: number
   /** Toast 点击后打开的 URL（可选） */
   toastClickUrl?: string
+  /** 该规则的 TODO 模板内容（支持 Markdown）*/
+  templateContent?: string
 }
 
 /**
@@ -156,6 +158,7 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
     toastMessage: isChinese ? '别忘了发送今日工作计划！' : "Don't forget to send your work plan!",
     toastDuration: 10,
     toastClickUrl: '', // 可选的 URL
+    templateContent: getDefaultTemplateContent(language), // 使用默认模板
   }
 }
 
@@ -163,7 +166,7 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
  * 默认配置
  */
 export const DEFAULT_CONFIG: AppConfig = {
-  version: 4, // 版本 4: 移除 quickLinks，使用 toastClickUrl
+  version: 5, // 版本 5: 为每个规则添加 templateContent 字段，支持 Markdown
   reminderRules: [createDefaultReminderRule()],
   template: {
     content: getDefaultTemplateContent(),
