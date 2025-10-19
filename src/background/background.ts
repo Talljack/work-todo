@@ -126,22 +126,52 @@ async function handleReminder(): Promise<void> {
     // 2. 在所有标签页显示 Toast 提醒
     try {
       const tabs = await browser.tabs.query({})
+      console.log(`Found ${tabs.length} total tabs`)
+
+      let toastSent = false
+      let validTabCount = 0
+
       for (const tab of tabs) {
-        if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-          await browser.tabs
-            .sendMessage(tab.id, {
+        if (tab.id && tab.url) {
+          // 排除特殊页面
+          if (
+            tab.url.startsWith('chrome://') ||
+            tab.url.startsWith('chrome-extension://') ||
+            tab.url.startsWith('about:') ||
+            tab.url.startsWith('edge://')
+          ) {
+            console.log(`Skipping special tab: ${tab.url}`)
+            continue
+          }
+
+          validTabCount++
+          console.log(`Attempting to send toast to tab ${tab.id}: ${tab.url}`)
+
+          try {
+            await browser.tabs.sendMessage(tab.id, {
               type: 'SHOW_TOAST',
               message: rule.toastMessage,
               duration: rule.toastDuration * 1000, // 转换为毫秒
               url: rule.toastClickUrl, // 可选的点击后打开的 URL
             })
-            .catch(() => {
-              // 忽略无法注入的页面（如 chrome:// 页面）
-            })
+            toastSent = true
+            console.log(`✓ Toast sent to tab ${tab.id}`)
+          } catch (error) {
+            console.log(`✗ Failed to send toast to tab ${tab.id}:`, error)
+          }
         }
       }
+
+      console.log(`Valid tabs found: ${validTabCount}, Toast sent: ${toastSent}`)
+
+      // 如果没有可用的标签页能显示toast，记录警告
+      if (!toastSent) {
+        console.warn(
+          '⚠️ No valid tabs available for toast notification. Please open a normal web page to see toast notifications.',
+        )
+      }
     } catch (error) {
-      console.log('Failed to show toast:', error)
+      console.error('Failed to show toast:', error)
     }
   }
 
@@ -232,6 +262,55 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
         case 'OPEN_OPTIONS':
           await browser.runtime.openOptionsPage()
           return { success: true }
+
+        case 'TEST_TOAST': {
+          // 测试 Toast 消息
+          const payload = msg.payload || {}
+          console.log('Testing toast with message:', payload.message)
+
+          try {
+            const tabs = await browser.tabs.query({})
+            console.log(`Found ${tabs.length} total tabs for test toast`)
+
+            let toastSent = false
+
+            for (const tab of tabs) {
+              if (tab.id && tab.url) {
+                // 排除特殊页面
+                if (
+                  tab.url.startsWith('chrome://') ||
+                  tab.url.startsWith('chrome-extension://') ||
+                  tab.url.startsWith('about:') ||
+                  tab.url.startsWith('edge://')
+                ) {
+                  continue
+                }
+
+                try {
+                  await browser.tabs.sendMessage(tab.id, {
+                    type: 'SHOW_TOAST',
+                    message: payload.message || '测试 Toast 消息',
+                    duration: payload.duration || 10000,
+                    url: payload.url || '',
+                  })
+                  toastSent = true
+                  console.log(`✓ Test toast sent to tab ${tab.id}`)
+                } catch (error) {
+                  console.log(`✗ Failed to send test toast to tab ${tab.id}:`, error)
+                }
+              }
+            }
+
+            if (!toastSent) {
+              console.warn('⚠️ No valid tabs available for test toast.')
+            }
+
+            return { success: true }
+          } catch (error) {
+            console.error('Error sending test toast:', error)
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+          }
+        }
 
         default:
           return { success: false, error: 'Unknown message type' }

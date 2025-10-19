@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   parseTime,
   formatTime,
+  formatTimeString,
   isWorkDay,
   shouldResetState,
   getCurrentMinutes,
@@ -21,12 +22,28 @@ describe('Time Utils', () => {
   })
 
   describe('formatTime', () => {
-    test('should format date to HH:mm', () => {
+    test('should format date to HH:mm by default', () => {
       const date = new Date('2025-10-16T09:30:00')
       expect(formatTime(date)).toBe('09:30')
 
       const date2 = new Date('2025-10-16T23:05:00')
       expect(formatTime(date2)).toBe('23:05')
+    })
+
+    test('should format date to 12-hour when requested', () => {
+      const date = new Date('2025-10-16T09:30:00')
+      expect(formatTime(date, '12h')).toBe('9:30 AM')
+
+      const date2 = new Date('2025-10-16T23:05:00')
+      expect(formatTime(date2, '12h')).toBe('11:05 PM')
+    })
+  })
+
+  describe('formatTimeString', () => {
+    test('should format time string using provided format', () => {
+      expect(formatTimeString('09:15', '24h')).toBe('09:15')
+      expect(formatTimeString('09:15', '12h')).toBe('9:15 AM')
+      expect(formatTimeString('23:45', '12h')).toBe('11:45 PM')
     })
   })
 

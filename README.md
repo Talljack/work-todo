@@ -21,6 +21,7 @@
 - Configure start time, deadline, and reminder interval to fit any rhythm
 - Add catch-up reminders after the deadline so nothing slips through
 - Works equally well for work stand-ups, personal habits, wellness check-ins, and more
+- Switch between 24-hour or 12-hour time formats
 
 #### 📋 Smart Templates
 
@@ -281,6 +282,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 设置开始时间、截止时间与提醒间隔，适应任何节奏
 - 截止后可追加补提醒，确保不错过关键事项
 - 无论是工作站会还是日常习惯都能轻松覆盖
+- 支持 24 小时制与 12 小时制切换
 
 #### 📋 智能模板
 

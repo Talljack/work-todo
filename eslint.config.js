@@ -3,7 +3,18 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '.vite', '*.config.js', '*.config.ts'] },
+  {
+    ignores: [
+      'dist',
+      'node_modules',
+      '.vite',
+      '.eslintCache',
+      '*.log',
+      '.vscode/*',
+      'vite.config.ts',
+      'tsconfig*.json',
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

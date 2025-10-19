@@ -43,6 +43,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^3.9.0",
     "@crxjs/vite-plugin": "^2.0.0-beta.25",
+    "@types/node": "^24.8.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/webextension-polyfill": "^0.12.1",

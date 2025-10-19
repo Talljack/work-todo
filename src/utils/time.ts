@@ -1,4 +1,4 @@
-import type { ReminderRule, DailyState } from '@/types'
+import type { ReminderRule, DailyState, TimeFormat } from '@/types'
 
 const MINUTES_IN_DAY = 24 * 60
 
@@ -43,10 +43,24 @@ export function getCurrentMinutes(date: Date = new Date()): number {
 /**
  * 格式化时间为 "HH:mm"
  */
-export function formatTime(date: Date): string {
-  const hours = date.getHours().toString().padStart(2, '0')
+export function formatTime(date: Date, format: TimeFormat = '24h'): string {
+  const hours = date.getHours()
   const minutes = date.getMinutes().toString().padStart(2, '0')
-  return `${hours}:${minutes}`
+
+  if (format === '12h') {
+    const suffix = hours >= 12 ? 'PM' : 'AM'
+    const hour12 = hours % 12 || 12
+    return `${hour12}:${minutes} ${suffix}`
+  }
+
+  return `${hours.toString().padStart(2, '0')}:${minutes}`
+}
+
+export function formatTimeString(time: string, format: TimeFormat = '24h'): string {
+  const [rawHours, rawMinutes] = time.split(':').map(Number)
+  const date = new Date()
+  date.setHours(rawHours, rawMinutes, 0, 0)
+  return formatTime(date, format)
 }
 
 /**
@@ -92,8 +106,8 @@ export function getNextReminderTime(now: Date, rule: ReminderRule, state: DailyS
     adjustedCurrentMinutes += MINUTES_IN_DAY
   }
 
-  // 如果在开始时间和截止时间之间，计算下一个间隔提醒时间
-  if (adjustedCurrentMinutes < deadlineMinutes) {
+  // 如果在开始时间和截止时间之间（包括截止时间），计算下一个间隔提醒时间
+  if (adjustedCurrentMinutes <= deadlineMinutes) {
     // 检查当前时间是否刚好是一个提醒时间点（在间隔点上）
     const minutesSinceStart = adjustedCurrentMinutes - startMinutes
     if (minutesSinceStart >= 0 && minutesSinceStart % rule.interval === 0) {

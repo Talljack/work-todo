@@ -11,7 +11,7 @@ import {
   ResetIcon,
 } from '@radix-ui/react-icons'
 import browser from 'webextension-polyfill'
-import type { AppConfig } from '@/types'
+import type { AppConfig, TimeFormat } from '@/types'
 import { DEFAULT_CONFIG, getDefaultTemplateContent } from '@/types'
 import { exportConfig, getConfig, importConfig, saveConfig } from '@/utils/storage'
 import { Button } from '@/components/ui/button'
@@ -61,6 +61,15 @@ const Options: React.FC = () => {
     // 自动保存
     await saveConfig(newConfig)
     await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+  }
+
+  const handleTimeFormatChange = async (format: TimeFormat) => {
+    const newConfig = {
+      ...configRef.current,
+      timeFormat: format,
+    }
+    updateConfig(newConfig)
+    await saveConfig(newConfig)
   }
 
   // 重置为默认模板（根据当前语言）
@@ -324,6 +333,23 @@ const Options: React.FC = () => {
                     <Input id="timezone" type="text" value={config.timezone} disabled />
                     <p className="text-xs text-slate-500">{t('options.other.timezoneHint')}</p>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="time-format">{t('options.other.timeFormat')}</Label>
+                    <Select
+                      value={config.timeFormat}
+                      onValueChange={(value) => handleTimeFormatChange(value as TimeFormat)}
+                    >
+                      <SelectTrigger id="time-format">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="24h">{t('options.other.timeFormat24', '24-hour')}</SelectItem>
+                        <SelectItem value="12h">{t('options.other.timeFormat12', '12-hour')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500">{t('options.other.timeFormatHint')}</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -352,6 +378,7 @@ const Options: React.FC = () => {
                   // 通知后台重新初始化
                   await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
                 }}
+                timeFormat={config.timeFormat}
               />
             </div>
           )}
