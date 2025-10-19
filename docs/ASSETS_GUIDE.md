@@ -8,9 +8,9 @@ This guide explains how to create the required promotional images and screenshot
 
 ### Icons (Required)
 
-- [x] **Extension Icon** - 128x128px
-  - Location: `public/icon-128.png`
-  - Already created
+- [x] **Extension Icon** - multi-size PNG (16/32/48/128/256/512)
+  - Location: `src/assets/icons/icon-*.png`
+  - Regenerate via `python3 scripts/generate_icon.py`
   - Used in: Extension toolbar, Chrome Web Store listing
 
 ### Promotional Tiles

@@ -10,9 +10,15 @@ Stay consistent! Custom reminders for daily routines with flexible schedules, te
 
 **Design routines that stick. 🔔**
 
-Routine Reminder is a flexible Chrome extension for standups, habit tracking, wellness breaks, or any recurring task. Craft your own schedules, templates, and messages so the right reminder appears exactly when you need it.
+Routine Reminder is a flexible Chrome extension for standups, follow-ups, wellness breaks, or any recurring task. Craft multi-rule schedules, tailor templates, and deliver messages exactly when they matter—without leaving the browser.
 
 **✨ Key Highlights**
+
+🧠 **Multi-rule Engine**
+
+- Build separate reminder rules for different workflows (team standups, client follow-ups, personal rituals)
+- Each rule has its own schedule, template copy, toast styling, and URLs
+- Quickly pause or enable a rule as priorities shift
 
 🕐 **Flexible Schedules**
 
@@ -27,6 +33,13 @@ Routine Reminder is a flexible Chrome extension for standups, habit tracking, we
 - Markdown editor for rich, personalised instructions
 - Per-rule overrides for unique copy, toast messages, and links
 - One-click copy from the popup for instant sharing or journaling
+
+🧩 **Built-in Scenarios**
+
+- Morning Standup: sync goals, blockers, and requests for help
+- Midday Progress: review morning wins and reset afternoon focus
+- End-of-day Wrap-up: reflect on highlights, capture carry-over tasks, plan tomorrow
+- Previews available in both English and Chinese out of the box
 
 🔔 **Multi-channel Alerts**
 
@@ -57,6 +70,7 @@ Routine Reminder is a flexible Chrome extension for standups, habit tracking, we
 
 - 100% local storage—no accounts, servers, or tracking
 - Import/export routines whenever you need
+- Works offline so your data never leaves Chrome
 
 **Great for:**
 
@@ -79,6 +93,7 @@ Routine Reminder is a flexible Chrome extension for standups, habit tracking, we
 - Chain late reminders for stubborn tasks
 - Visit the statistics tab weekly to reflect and adjust
 - Pin the extension icon for quick access
+- Highlight multi-rule coverage and “no cloud, no accounts” in Chrome Web Store visuals to stand out
 
 **Open Source:** Explore and contribute on GitHub.
 
@@ -100,6 +115,12 @@ Routine Reminder（中文名：日常提醒助手）是一款可高度自定义�
 
 **✨ 核心亮点**
 
+🧠 **多规则引擎**
+
+- 为不同工作流创建独立规则（晨会、客户跟进、健康打卡等）
+- 每条规则拥有专属时间段、模板文案、Toast 样式与链接
+- 根据需求随时启用/停用，保持节奏灵活
+
 🕐 **灵活的提醒计划**
 
 - 自由选择例行任务的执行日期（工作日、周末或自定义组合）
@@ -113,6 +134,13 @@ Routine Reminder（中文名：日常提醒助手）是一款可高度自定义�
 - 支持 Markdown，自由编写提示脚本
 - 每条提醒规则可配置独立模板、通知文案与链接
 - 弹窗中一键复制，方便分享或记录
+
+🧩 **开箱即用的场景**
+
+- **晨间站会**：同步今日重点、阻碍与协助需求
+- **午间进度**：复盘上午成果，调整下午安排
+- **日终复盘**：记录亮点、遗留事项与明日优先级
+- 中英文示例模板已经准备好，安装即可使用
 
 🔔 **多种提醒方式**
 
@@ -144,6 +172,7 @@ Routine Reminder（中文名：日常提醒助手）是一款可高度自定义�
 - 数据全部存储在本地浏览器
 - 不联网、不上传、不跟踪
 - 随时导出/导入配置
+- 断网环境也能照常提醒
 
 **适用场景：**
 
@@ -166,6 +195,7 @@ Routine Reminder（中文名：日常提醒助手）是一款可高度自定义�
 - 通过补提醒拉起“顽固”任务
 - 每周查看统计页，及时优化安排
 - 将图标固定到工具栏，随时查看状态
+- 在宣传图中突出“多规则、多模板、纯本地”卖点，吸引 Chrome Web Store 用户关注
 
 **开源社区：** 欢迎在 GitHub 上查看代码并参与贡献。
 
