@@ -285,9 +285,27 @@ export async function getDailyState(): Promise<DailyState> {
 
       // 迁移旧的 sent 状态到新的 completedRules
       if (state.sent !== undefined) {
+        let completedRules: string[] = []
+
+        if (state.sent) {
+          // 如果旧版本标记为已完成，需要获取当前所有启用的规则 ID
+          // 这样后台调度器才能正确识别这些规则已完成
+          try {
+            const config = await getConfig()
+            completedRules = config.reminderRules.filter((rule) => rule.enabled).map((rule) => rule.id)
+            console.log('Migrated sent=true to completedRules:', completedRules)
+          } catch (error) {
+            console.error('Failed to get config during migration, using empty completedRules:', error)
+            completedRules = []
+          }
+        } else {
+          // 如果旧版本未完成，completedRules 为空数组
+          completedRules = state.completedRules || []
+        }
+
         const migratedState: DailyState = {
           date: state.date,
-          completedRules: state.completedRules || (state.sent ? ['legacy-all'] : []),
+          completedRules,
           lastRemindTime: state.lastRemindTime,
           // 不再包含 sent 字段
         }
