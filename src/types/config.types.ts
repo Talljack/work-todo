@@ -152,9 +152,9 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
     enabled: true,
     workDays: [true, true, true, true, true, true, true], // Every day
     startTime: '09:00',
-    interval: 30,
+    interval: 10,
     deadline: '10:00',
-    lateReminders: ['12:00'],
+    lateReminders: ['10:30'],
     notificationTitle: isChinese ? '提醒：今日例行检查' : 'Reminder: Daily routine check-in',
     notificationMessage: isChinese
       ? '别忘了今天的例行任务！点击查看详情。'

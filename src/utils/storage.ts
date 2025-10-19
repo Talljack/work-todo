@@ -281,7 +281,27 @@ export async function getDailyState(): Promise<DailyState> {
   try {
     const result = await browser.storage.local.get(STORAGE_KEYS.DAILY_STATE)
     if (result[STORAGE_KEYS.DAILY_STATE]) {
-      return result[STORAGE_KEYS.DAILY_STATE] as DailyState
+      const state = result[STORAGE_KEYS.DAILY_STATE] as DailyState
+
+      // 迁移旧的 sent 状态到新的 completedRules
+      if (state.sent !== undefined) {
+        const migratedState: DailyState = {
+          date: state.date,
+          completedRules: state.completedRules || (state.sent ? ['legacy-all'] : []),
+          lastRemindTime: state.lastRemindTime,
+          // 不再包含 sent 字段
+        }
+        // 保存迁移后的状态（删除 sent 字段）
+        await saveDailyState(migratedState)
+        return migratedState
+      }
+
+      // 确保 completedRules 存在
+      if (!state.completedRules) {
+        state.completedRules = []
+      }
+
+      return state
     }
     return DEFAULT_DAILY_STATE
   } catch (error) {
@@ -305,21 +325,75 @@ export async function saveDailyState(state: DailyState): Promise<void> {
 }
 
 /**
- * 标记今日已发送
+ * 标记今日已发送（旧版本，标记所有规则为已完成）
+ * @deprecated 使用 markRuleAsCompleted 代替
  */
 export async function markAsSent(): Promise<void> {
+  const config = await getConfig()
   const today = new Date().toISOString().split('T')[0]
   const now = new Date().toISOString()
+
+  // 获取所有启用的规则ID
+  const enabledRuleIds = config.reminderRules.filter((rule) => rule.enabled).map((rule) => rule.id)
 
   // 更新每日状态
   await saveDailyState({
     date: today,
-    sent: true,
+    completedRules: enabledRuleIds,
     lastRemindTime: now,
   })
 
   // 添加到历史记录
   await addHistoryRecord(today, true, now)
+}
+
+/**
+ * 标记特定规则为已完成
+ */
+export async function markRuleAsCompleted(ruleId: string): Promise<void> {
+  const today = new Date().toISOString().split('T')[0]
+  const now = new Date().toISOString()
+  const state = await getDailyState()
+
+  // 如果日期不是今天，重置状态
+  if (state.date !== today) {
+    state.date = today
+    state.completedRules = []
+  }
+
+  // 添加规则ID到已完成列表（避免重复）
+  if (!state.completedRules.includes(ruleId)) {
+    state.completedRules.push(ruleId)
+  }
+
+  state.lastRemindTime = now
+
+  await saveDailyState(state)
+
+  // 检查是否所有启用的规则都已完成
+  const config = await getConfig()
+  const enabledRuleIds = config.reminderRules.filter((rule) => rule.enabled).map((rule) => rule.id)
+  const allCompleted = enabledRuleIds.every((id) => state.completedRules.includes(id))
+
+  // 如果所有规则都已完成，添加到历史记录
+  if (allCompleted) {
+    await addHistoryRecord(today, true, now)
+  }
+}
+
+/**
+ * 检查规则是否已完成
+ */
+export async function isRuleCompleted(ruleId: string): Promise<boolean> {
+  const state = await getDailyState()
+  const today = new Date().toISOString().split('T')[0]
+
+  // 如果日期不是今天，返回 false
+  if (state.date !== today) {
+    return false
+  }
+
+  return state.completedRules.includes(ruleId)
 }
 
 /**
@@ -329,7 +403,7 @@ export async function resetDailyState(): Promise<void> {
   const today = new Date().toISOString().split('T')[0]
   await saveDailyState({
     date: today,
-    sent: false,
+    completedRules: [],
   })
 }
 

@@ -4,8 +4,10 @@
 export interface DailyState {
   /** 日期，格式 "YYYY-MM-DD" */
   date: string
-  /** 是否已完成 */
-  sent: boolean
+  /** 是否已完成（废弃，保留用于迁移） */
+  sent?: boolean
+  /** 已完成的规则ID列表 */
+  completedRules: string[]
   /** 最后提醒时间（ISO 字符串） */
   lastRemindTime?: string
 }
@@ -57,7 +59,7 @@ export interface AppData {
  */
 export const DEFAULT_DAILY_STATE: DailyState = {
   date: '',
-  sent: false,
+  completedRules: [],
 }
 
 /**

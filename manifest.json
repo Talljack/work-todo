@@ -62,6 +62,6 @@
       "description": "Open settings page"
     }
   },
-  "permissions": ["storage", "alarms", "notifications", "tabs"],
+  "permissions": ["storage", "alarms", "notifications", "tabs", "scripting"],
   "host_permissions": ["<all_urls>"]
 }

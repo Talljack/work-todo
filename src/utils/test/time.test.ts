@@ -136,7 +136,7 @@ describe('Time Utils', () => {
       toastClickUrl: '',
     }
 
-    const state: DailyState = { date: '', sent: false }
+    const state: DailyState = { date: '', completedRules: [] }
 
     test('should return current time when exactly at start time', () => {
       const now = new Date('2025-10-17T09:00:00') // Friday 09:00
@@ -176,7 +176,7 @@ describe('Time Utils', () => {
 
     test('should return null when already sent', () => {
       const now = new Date('2025-10-17T09:00:00')
-      const sentState: DailyState = { date: '', sent: true }
+      const sentState: DailyState = { date: '', completedRules: [] }
       const result = getNextReminderTime(now, rule, sentState)
 
       expect(result).toBeNull()

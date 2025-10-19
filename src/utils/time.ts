@@ -78,8 +78,10 @@ export function shouldResetState(lastDate: string): boolean {
  * 返回 null 表示今天不需要再提醒
  */
 export function getNextReminderTime(now: Date, rule: ReminderRule, state: DailyState): Date | null {
-  // 如果已发送，不再提醒
-  if (state.sent) return null
+  // 如果这条规则已完成，不再提醒
+  if (state.completedRules && state.completedRules.includes(rule.id)) {
+    return null
+  }
 
   // 如果不是工作日，不提醒
   if (!isWorkDay(now, rule)) return null
