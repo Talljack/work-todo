@@ -196,6 +196,7 @@ async function handleReminder(): Promise<void> {
             message: rule.toastMessage,
             duration: rule.toastDuration * 1000,
             url: rule.toastClickUrl,
+            backgroundColor: config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           })
           toastSent = true
           console.log(`✓ Toast sent to tab ${tab.id}`)
@@ -205,13 +206,13 @@ async function handleReminder(): Promise<void> {
           try {
             await browser.scripting.executeScript({
               target: { tabId: tab.id },
-              func: (message: string, duration: number, clickUrl?: string) => {
+              func: (message: string, duration: number, backgroundColor: string, clickUrl?: string) => {
                 const toast = document.createElement('div')
                 toast.style.cssText = `
                   position: fixed;
                   top: 20px;
                   right: 20px;
-                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  background: ${backgroundColor};
                   color: white;
                   padding: 16px 20px;
                   border-radius: 12px;
@@ -258,7 +259,12 @@ async function handleReminder(): Promise<void> {
                   setTimeout(() => toast.remove(), 300)
                 }, duration)
               },
-              args: [rule.toastMessage, rule.toastDuration * 1000, rule.toastClickUrl],
+              args: [
+                rule.toastMessage,
+                rule.toastDuration * 1000,
+                config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                rule.toastClickUrl,
+              ],
             })
             toastSent = true
             console.log(`✓ Fallback toast shown in tab ${tab.id}`)
@@ -405,6 +411,7 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
           console.log('Testing toast with message:', payload.message)
 
           try {
+            const config = await getConfig()
             const tabs = await browser.tabs.query({})
             let toastSent = false
 
@@ -425,6 +432,7 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
                   message: payload.message || '测试 Toast 消息',
                   duration: payload.duration || 10000,
                   url: payload.url || '',
+                  backgroundColor: config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 })
                 toastSent = true
               } catch {
@@ -432,13 +440,13 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
                 try {
                   await browser.scripting.executeScript({
                     target: { tabId: tab.id },
-                    func: (message: string, duration: number, clickUrl?: string) => {
+                    func: (message: string, duration: number, backgroundColor: string, clickUrl?: string) => {
                       const toast = document.createElement('div')
                       toast.style.cssText = `
                         position: fixed;
                         top: 20px;
                         right: 20px;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        background: ${backgroundColor};
                         color: white;
                         padding: 16px 20px;
                         border-radius: 12px;
@@ -485,7 +493,12 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
                         setTimeout(() => toast.remove(), 300)
                       }, duration)
                     },
-                    args: [payload.message || '测试 Toast 消息', payload.duration || 10000, payload.url || ''],
+                    args: [
+                      payload.message || '测试 Toast 消息',
+                      payload.duration || 10000,
+                      config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      payload.url || '',
+                    ],
                   })
                   toastSent = true
                 } catch (injectError) {

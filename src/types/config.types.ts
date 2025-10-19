@@ -75,6 +75,8 @@ export interface AppConfig {
   timezone: string
   /** 时间制式 */
   timeFormat: TimeFormat
+  /** Toast 弹窗背景色（CSS gradient） */
+  toastBackgroundColor?: string
   /** 配置版本号，用于迁移 */
   version: number
   /** 旧版配置（用于迁移兼容）*/
@@ -177,4 +179,5 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
   timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
   timeFormat: '24h',
+  toastBackgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
 }

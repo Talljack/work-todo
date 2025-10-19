@@ -26,13 +26,9 @@ function initToastContainer() {
       toastOptions: {
         duration: 10000,
         style: {
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: '#fff',
-          padding: '16px 20px',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
-          fontSize: '14px',
-          maxWidth: '400px',
+          padding: '0',
+          background: 'transparent',
+          boxShadow: 'none',
         },
       },
     }),
@@ -41,7 +37,7 @@ function initToastContainer() {
 
 // 监听来自后台的消息
 browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  const msg = message as { type: string; message?: string; duration?: number; url?: string }
+  const msg = message as { type: string; message?: string; duration?: number; url?: string; backgroundColor?: string }
 
   if (msg.type === 'SHOW_TOAST') {
     initToastContainer()
@@ -50,6 +46,8 @@ browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) 
     const duration = msg.duration || 30000
     // 获取点击后要打开的 URL（可选）
     const targetUrl = msg.url
+    // 获取背景颜色（默认紫色渐变）
+    const backgroundColor = msg.backgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
 
     // 显示自定义 toast
     toast.custom(
@@ -71,6 +69,13 @@ browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) 
               alignItems: 'start',
               gap: '12px',
               cursor: 'pointer',
+              background: backgroundColor,
+              color: '#fff',
+              padding: '16px 20px',
+              borderRadius: '12px',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
+              fontSize: '14px',
+              maxWidth: '400px',
             },
           },
           React.createElement('div', { style: { fontSize: '24px' } }, '⏰'),

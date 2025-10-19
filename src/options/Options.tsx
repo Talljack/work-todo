@@ -350,6 +350,74 @@ const Options: React.FC = () => {
                     </Select>
                     <p className="text-xs text-slate-500">{t('options.other.timeFormatHint')}</p>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="toast-color">
+                      {t('options.other.toastBackgroundColor', 'Toast Background Color')}
+                    </Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        {
+                          name: t('options.other.toastColor.purple', 'Purple'),
+                          value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.blue', 'Blue'),
+                          value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.green', 'Green'),
+                          value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.orange', 'Orange'),
+                          value: 'linear-gradient(135deg, #f46b45 0%, #eea849 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.pink', 'Pink'),
+                          value: 'linear-gradient(135deg, #ee0979 0%, #ff6a00 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.teal', 'Teal'),
+                          value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.red', 'Red'),
+                          value: 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
+                        },
+                        {
+                          name: t('options.other.toastColor.dark', 'Dark'),
+                          value: 'linear-gradient(135deg, #434343 0%, #000000 100%)',
+                        },
+                      ].map((color) => (
+                        <button
+                          key={color.value}
+                          type="button"
+                          onClick={async () => {
+                            const newConfig = {
+                              ...configRef.current,
+                              toastBackgroundColor: color.value,
+                            }
+                            updateConfig(newConfig)
+                            await saveConfig(newConfig)
+                          }}
+                          className={`h-12 rounded-lg border-2 transition-all ${
+                            config.toastBackgroundColor === color.value
+                              ? 'border-primary-500 ring-2 ring-primary-200'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                          style={{ background: color.value }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {t(
+                        'options.other.toastBackgroundColorHint',
+                        'Select the background color for toast notifications',
+                      )}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
