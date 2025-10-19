@@ -15,10 +15,13 @@ const resources = {
       'popup.status.pastDeadline': 'Past Deadline',
       'popup.status.timeRemaining': '{{hours}}h {{minutes}}m',
       'popup.status.minutesRemaining': '{{minutes}}m',
-      'popup.template.title': 'Routine Template',
+      'popup.template.title': 'Reminder Content',
       'popup.template.copy': 'Copy',
       'popup.template.copied': 'Copied!',
       'popup.actions.markSent': 'Mark as Done',
+      'popup.everyMinutes': 'Every {{minutes}} min',
+      'popup.nextReminderAt': 'Next reminder at',
+      'popup.ruleTemplateLabel': 'Reminder Content',
 
       // Options
       'options.title': 'Routine Reminder Settings',
@@ -81,10 +84,13 @@ const resources = {
       'popup.status.pastDeadline': '已过截止时间',
       'popup.status.timeRemaining': '{{hours}}小时{{minutes}}分钟',
       'popup.status.minutesRemaining': '{{minutes}}分钟',
-      'popup.template.title': '提醒模板',
+      'popup.template.title': '提醒内容',
       'popup.template.copy': '复制',
       'popup.template.copied': '已复制！',
       'popup.actions.markSent': '标记已完成',
+      'popup.everyMinutes': '每 {{minutes}} 分钟一次',
+      'popup.nextReminderAt': '下一次提醒时间',
+      'popup.ruleTemplateLabel': '提醒内容',
 
       // Options
       'options.title': '日常提醒助手设置',

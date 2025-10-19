@@ -14,7 +14,6 @@ const Popup: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [isRuleDetailsExpanded, setIsRuleDetailsExpanded] = useState(false) // 规则详情折叠状态，默认折叠
 
   // 加载配置和状态
   useEffect(() => {
@@ -96,93 +95,36 @@ const Popup: React.FC = () => {
 
   // 获取即将触发的规则（下一个提醒时间最早的规则）
   // 用于确定提醒时间和Mark as Done按钮
-  const getNextActiveRule = (): ReminderRule | null => {
-    const now = new Date()
-    let earliestTime: Date | null = null
-    let earliestRule: ReminderRule | null = null
+  const getNextRuleEntry = (): { rule: ReminderRule; time: Date } | null => {
+    const now = currentTime
+    let best: { rule: ReminderRule; time: Date } | null = null
 
     for (const rule of config.reminderRules) {
       if (!rule.enabled) continue
 
       const nextTime = getNextReminderTime(now, rule, state)
-      if (nextTime) {
-        if (!earliestTime || nextTime < earliestTime) {
-          earliestTime = nextTime
-          earliestRule = rule
-        }
+      if (!nextTime) continue
+
+      if (!best || nextTime < best.time) {
+        best = { rule, time: nextTime }
       }
     }
 
-    return earliestRule
+    return best
   }
 
-  // 获取今天激活的规则（用于显示规则信息，不受sent状态影响）
-  const getTodayActiveRule = (): ReminderRule | null => {
-    const now = new Date()
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const nextRuleEntry = getNextRuleEntry()
+  const nextActiveRule = nextRuleEntry?.rule ?? null
+  const nextReminderTime = nextRuleEntry?.time ?? null
 
-    // 找出今天启用的、符合工作日设置的规则
-    for (const rule of config.reminderRules) {
-      if (!rule.enabled) continue
-      if (!isWorkDay(now, rule)) continue
-
-      // 解析规则的时间
-      const [startHour, startMin] = rule.startTime.split(':').map(Number)
-      const [deadlineHour, deadlineMin] = rule.deadline.split(':').map(Number)
-      const startMinutes = startHour * 60 + startMin
-      let deadlineMinutes = deadlineHour * 60 + deadlineMin
-
-      // 处理跨午夜情况（例如 23:30 - 00:30）
-      if (deadlineMinutes < startMinutes) {
-        deadlineMinutes += 24 * 60
-      }
-
-      // 检查当前时间是否在开始时间之后
-      let adjustedCurrentMinutes = currentMinutes
-      if (currentMinutes < startMinutes && deadlineMinutes >= 24 * 60) {
-        // 如果当前时间在午夜后，且规则跨午夜，需要调整
-        adjustedCurrentMinutes += 24 * 60
-      }
-
-      // 检查是否在活动时间范围内（包括迟到提醒时间）
-      const lateReminders = rule.lateReminders || []
-      let latestMinutes = deadlineMinutes
-
-      if (lateReminders.length > 0) {
-        // 找到最晚的迟到提醒时间
-        const lateMinutes = lateReminders.map((time) => {
-          const [h, m] = time.split(':').map(Number)
-          let mins = h * 60 + m
-          if (mins < startMinutes) mins += 24 * 60 // 跨午夜
-          return mins
-        })
-        latestMinutes = Math.max(deadlineMinutes, ...lateMinutes)
-      }
-
-      if (adjustedCurrentMinutes >= startMinutes && adjustedCurrentMinutes <= latestMinutes) {
-        return rule
-      }
-    }
-
-    return null
-  }
-
-  // 获取要显示的模板内容
   const getTemplateContent = (): string => {
-    const activeRule = getTodayActiveRule()
-
-    // 如果有今天激活的规则且该规则有自定义模板，使用规则的模板
-    if (activeRule?.templateContent) {
-      return activeRule.templateContent
+    if (nextActiveRule?.templateContent) {
+      return nextActiveRule.templateContent
     }
-
-    // 否则使用全局模板
     return config.template.content
   }
 
-  // 获取今天会触发的规则的截止时间（必须是今天的工作日）
-  const nextActiveRule = getNextActiveRule()
-  const todayActiveRule = getTodayActiveRule() // 用于显示规则信息
+  const nextDetailRule = nextActiveRule
 
   // 计算距离下一次提醒的时间，而不是距离deadline
   const getTimeUntilNextReminder = (): {
@@ -190,16 +132,11 @@ const Popup: React.FC = () => {
     hours: number
     minutes: number
   } => {
-    if (!nextActiveRule) {
+    if (!nextReminderTime) {
       return { isPastDeadline: true, hours: 0, minutes: 0 }
     }
 
-    const nextTime = getNextReminderTime(currentTime, nextActiveRule, state)
-    if (!nextTime) {
-      return { isPastDeadline: true, hours: 0, minutes: 0 }
-    }
-
-    const diff = nextTime.getTime() - currentTime.getTime()
+    const diff = nextReminderTime.getTime() - currentTime.getTime()
     if (diff <= 0) {
       return { isPastDeadline: true, hours: 0, minutes: 0 }
     }
@@ -291,111 +228,99 @@ const Popup: React.FC = () => {
       {/* 主体内容 */}
       <div className="p-6 space-y-4">
         {/* 当前激活的规则信息 */}
-        {todayActiveRule && (
-          <div className="card">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
-                <div className="text-lg font-bold text-primary-700">{todayActiveRule.name}</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {todayActiveRule.startTime} - {todayActiveRule.deadline} · Every {todayActiveRule.interval} min
+        {nextDetailRule && (
+          <div className="card space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
+              <div className="rounded border border-gray-200 bg-white p-3 space-y-1">
+                <div className="text-sm font-semibold text-primary-700">{nextDetailRule.name}</div>
+                <div className="text-xs text-gray-500">
+                  {nextDetailRule.startTime} - {nextDetailRule.deadline} ·{' '}
+                  {t('popup.everyMinutes', { minutes: nextDetailRule.interval })}
                 </div>
+                {nextReminderTime && (
+                  <div className="text-xs text-gray-500">
+                    {t('popup.nextReminderAt', 'Next reminder at')} {formatTime(nextReminderTime)}
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => setIsRuleDetailsExpanded(!isRuleDetailsExpanded)}
-                className="ml-2 text-gray-500 hover:text-gray-700 transition-colors p-1"
-                title={isRuleDetailsExpanded ? 'Collapse' : 'Expand'}
-              >
-                <svg
-                  className={`w-5 h-5 transition-transform ${isRuleDetailsExpanded ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
             </div>
 
-            {/* 详细信息 - 只在展开时显示 */}
-            {isRuleDetailsExpanded && (
-              <>
-                {/* 通知设置 */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-600 mb-2">
-                    {t('popup.notificationSettings', 'Notification Settings')}
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 mb-1">Title</div>
-                      <div className="text-sm text-gray-800">{todayActiveRule.notificationTitle}</div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
-                      <div className="text-sm text-gray-800">{todayActiveRule.notificationMessage}</div>
-                    </div>
-                  </div>
+            <div className="space-y-3">
+              <div className="rounded border border-gray-200 p-3 bg-white space-y-2">
+                <div className="text-xs font-medium text-gray-500">
+                  {t('popup.notificationSettings', 'Notification Settings')}
                 </div>
+                <div className="bg-gray-50 p-2 rounded border border-gray-200 text-sm text-gray-800">
+                  <div className="font-medium">{nextDetailRule.notificationTitle}</div>
+                  <div className="mt-1 whitespace-pre-line text-gray-600">{nextDetailRule.notificationMessage}</div>
+                </div>
+              </div>
 
-                {/* Toast设置 */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h3 className="text-xs font-semibold text-gray-600 mb-2">
-                    {t('popup.toastSettings', 'Toast Settings')}
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 mb-1">Message</div>
-                      <div className="text-sm text-gray-800">{todayActiveRule.toastMessage}</div>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 mb-1">Duration</div>
-                      <div className="text-sm text-gray-800">{todayActiveRule.toastDuration}s</div>
-                    </div>
+              <div className="rounded border border-gray-200 p-3 bg-white space-y-2">
+                <div className="text-xs font-medium text-gray-500">{t('popup.toastSettings', 'Toast Settings')}</div>
+                <div className="bg-gray-50 p-2 rounded border border-gray-200 text-sm text-gray-800">
+                  <div className="whitespace-pre-line">{nextDetailRule.toastMessage}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {t('popup.toastDurationLabel', 'Toast Duration')}: {nextDetailRule.toastDuration}s
                   </div>
+                  {nextDetailRule.toastClickUrl && nextDetailRule.toastClickUrl.trim() !== '' && (
+                    <a
+                      href={nextDetailRule.toastClickUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-xs text-primary-600 hover:underline break-all mt-1"
+                    >
+                      {nextDetailRule.toastClickUrl}
+                    </a>
+                  )}
                 </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         )}
 
-        {/* TODO 模板 */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-gray-700">{t('popup.template.title')}</h2>
-            <button
-              onClick={handleCopyTemplate}
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
-            >
-              {copied ? (
-                <span className="flex items-center text-green-600">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  {t('popup.template.copied')}
-                </span>
-              ) : (
-                <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                  {t('popup.template.copy')}
-                </span>
-              )}
-            </button>
+        {nextDetailRule?.templateContent && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-gray-700">
+                {t('popup.ruleTemplateLabel', 'Routine Template')}
+              </h2>
+              <button
+                onClick={handleCopyTemplate}
+                className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
+              >
+                {copied ? (
+                  <span className="flex items-center text-green-600">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {t('popup.template.copied')}
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                    {t('popup.template.copy')}
+                  </span>
+                )}
+              </button>
+            </div>
+            <div className="prose prose-sm max-w-none bg-gray-50 p-3 rounded border border-gray-200 max-h-48 overflow-y-auto">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{nextDetailRule.templateContent}</ReactMarkdown>
+            </div>
           </div>
-          <div className="prose prose-sm max-w-none bg-gray-50 p-3 rounded border border-gray-200 max-h-48 overflow-y-auto">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{getTemplateContent()}</ReactMarkdown>
-          </div>
-        </div>
+        )}
 
         {/* 操作按钮 */}
         <div className="space-y-2">
