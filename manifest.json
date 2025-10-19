@@ -34,7 +34,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://*/*", "http://*/*"],
       "js": ["src/content-script/content-script.ts"],
       "run_at": "document_idle"
     }
@@ -63,5 +63,11 @@
     }
   },
   "permissions": ["storage", "alarms", "notifications", "tabs", "scripting"],
-  "host_permissions": ["<all_urls>"]
+  "host_permissions": ["https://*/*", "http://*/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "src/assets/icons/*"],
+      "matches": ["https://*/*", "http://*/*"]
+    }
+  ]
 }

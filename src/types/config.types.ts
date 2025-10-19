@@ -141,6 +141,14 @@ export const getDefaultToastMessage = (lang?: string): string => {
 /**
  * 创建默认的提醒规则
  */
+const generateRuleId = (prefix: string): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}-${crypto.randomUUID()}`
+  }
+  const random = Math.random().toString(36).slice(2, 8)
+  return `${prefix}-${Date.now()}-${random}`
+}
+
 export const createDefaultReminderRule = (lang?: string): ReminderRule => {
   const language =
     lang ||
@@ -149,7 +157,7 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
   const isChinese = language.startsWith('zh')
 
   return {
-    id: `rule-${Date.now()}`,
+    id: generateRuleId('rule'),
     name: isChinese ? '每日例行提醒' : 'Daily Routine Reminder',
     enabled: true,
     workDays: [true, true, true, true, true, true, true], // Every day
@@ -168,12 +176,140 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
   }
 }
 
+export const createPresetReminderRules = (lang?: string): ReminderRule[] => {
+  const language =
+    lang ||
+    (typeof window !== 'undefined' ? localStorage.getItem('language') : null) ||
+    (typeof navigator !== 'undefined' ? navigator.language : 'en')
+  const isChinese = language.startsWith('zh')
+  const weekdaySchedule = [true, true, true, true, true, false, false]
+
+  return [
+    {
+      id: generateRuleId('rule'),
+      name: isChinese ? '晨间站会' : 'Morning Standup',
+      enabled: true,
+      workDays: weekdaySchedule,
+      startTime: '09:15',
+      interval: 15,
+      deadline: '09:45',
+      lateReminders: ['10:00'],
+      notificationTitle: isChinese ? '提醒：请分享今日计划' : 'Reminder: Share today’s plan',
+      notificationMessage: isChinese
+        ? '晨间站会开始啦，简单同步今日目标与阻碍。'
+        : 'Morning standup is starting—share goals and blockers.',
+      toastMessage: isChinese
+        ? '写下今日重点，让团队同步你的进展。'
+        : 'Outline today’s focus so the team stays aligned.',
+      toastDuration: 15,
+      toastClickUrl: '',
+      templateContent: isChinese
+        ? `【今日重点】
+- 3 个最重要的任务
+- 可能遇到的阻碍
+- 需要的协助
+
+【额外事项】
+- 会议与提醒
+- 客户或团队跟进`
+        : `[Today’s Top Priorities]
+- Three key tasks
+- Potential blockers
+- Help needed from the team
+
+[Other Notes]
+- Meetings & reminders
+- Follow-ups to schedule`,
+    },
+    {
+      id: generateRuleId('rule'),
+      name: isChinese ? '午间进度检查' : 'Midday Progress Check-in',
+      enabled: true,
+      workDays: weekdaySchedule,
+      startTime: '13:30',
+      interval: 20,
+      deadline: '14:30',
+      lateReminders: ['15:00'],
+      notificationTitle: isChinese ? '提醒：更新半日进度' : 'Reminder: Midday update',
+      notificationMessage: isChinese
+        ? '查看上午的任务是否按计划推进，及时调整节奏。'
+        : 'Review morning tasks and adjust the afternoon plan.',
+      toastMessage: isChinese
+        ? '用 2 分钟记录进度，确保下午方向明确。'
+        : 'Take 2 minutes to log progress and steer the afternoon.',
+      toastDuration: 20,
+      toastClickUrl: '',
+      templateContent: isChinese
+        ? `【上午完成】
+- 核心成果
+- 未完成原因
+
+【下午计划】
+- 必做事项
+- 预计完成时间
+
+【风险与提醒】
+- 需要提前沟通的事项`
+        : `[Morning Progress]
+- Wins delivered
+- Items still pending (and why)
+
+[Afternoon Plan]
+- Must-finish tasks
+- Estimated completion time
+
+[Risks & Reminders]
+- Topics to flag early`,
+    },
+    {
+      id: generateRuleId('rule'),
+      name: isChinese ? '日终复盘' : 'End-of-day Wrap-up',
+      enabled: true,
+      workDays: weekdaySchedule,
+      startTime: '17:30',
+      interval: 20,
+      deadline: '18:30',
+      lateReminders: ['19:00'],
+      notificationTitle: isChinese ? '提醒：填写今日总结' : 'Reminder: Capture today’s summary',
+      notificationMessage: isChinese
+        ? '回顾当天成果，记录待办与思考，方便次日承接。'
+        : 'Reflect on today, note carry-overs, prep for tomorrow.',
+      toastMessage: isChinese
+        ? '写下今日成果，顺手安排明日优先级。'
+        : 'Log today’s wins and set tomorrow’s priorities.',
+      toastDuration: 20,
+      toastClickUrl: '',
+      templateContent: isChinese
+        ? `【今日成果】
+- 完成的亮点
+- 学到的经验
+
+【待延续事项】
+- 明日优先级
+- 待确认或阻碍
+
+【个人提醒】
+- 自我复盘 / 心情记录`
+        : `[Today’s Highlights]
+- Key accomplishments
+- Lessons learned
+
+[Carry-over]
+- Tomorrow’s priorities
+- Items blocked or pending review
+
+[Personal Note]
+- Reflection / how you felt today`,
+    },
+  ]
+}
+
 /**
  * 默认配置
  */
 export const DEFAULT_CONFIG: AppConfig = {
   version: 6, // 版本 6: 新增时间制式配置
-  reminderRules: [createDefaultReminderRule()],
+  reminderRules: createPresetReminderRules(),
   template: {
     content: getDefaultTemplateContent(),
   },
