@@ -199,8 +199,72 @@ async function handleReminder(): Promise<void> {
           })
           toastSent = true
           console.log(`✓ Toast sent to tab ${tab.id}`)
-        } catch (error) {
-          console.log(`✗ Failed to send toast to tab ${tab.id}:`, error)
+        } catch {
+          // 如果content script未注入，使用简单的原生通知样式
+          console.log(`✗ Content script not available in tab ${tab.id}, using fallback toast...`)
+          try {
+            await browser.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (message: string, duration: number, clickUrl?: string) => {
+                const toast = document.createElement('div')
+                toast.style.cssText = `
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                  padding: 16px 20px;
+                  border-radius: 12px;
+                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                  font-size: 14px;
+                  max-width: 400px;
+                  z-index: 999999;
+                  cursor: pointer;
+                  display: flex;
+                  gap: 12px;
+                  align-items: start;
+                  animation: slideIn 0.3s ease-out;
+                `
+                toast.innerHTML =
+                  '<div style="font-size: 24px;">⏰</div>' +
+                  '<div style="flex: 1;">' +
+                  '<div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">日常提醒助手</div>' +
+                  '<div style="opacity: 0.95; line-height: 1.5;">' +
+                  message +
+                  '</div>' +
+                  '</div>' +
+                  '<button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">×</button>'
+
+                const style = document.createElement('style')
+                style.textContent =
+                  '@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }'
+                document.head.appendChild(style)
+
+                document.body.appendChild(toast)
+
+                toast.addEventListener('click', (e) => {
+                  const target = e.target as HTMLElement
+                  if (target.tagName === 'BUTTON') {
+                    e.stopPropagation()
+                    toast.remove()
+                  } else if (clickUrl) {
+                    window.open(clickUrl, '_blank')
+                    toast.remove()
+                  }
+                })
+
+                setTimeout(() => {
+                  toast.style.animation = 'slideIn 0.3s ease-out reverse'
+                  setTimeout(() => toast.remove(), 300)
+                }, duration)
+              },
+              args: [rule.toastMessage, rule.toastDuration * 1000, rule.toastClickUrl],
+            })
+            toastSent = true
+            console.log(`✓ Fallback toast shown in tab ${tab.id}`)
+          } catch (injectError) {
+            console.log(`✗ Failed to show fallback toast in tab ${tab.id}:`, injectError)
+          }
         }
       }
 
@@ -363,8 +427,70 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
                   url: payload.url || '',
                 })
                 toastSent = true
-              } catch (error) {
-                console.log(`Failed to send test toast to tab ${tab.id}:`, error)
+              } catch {
+                // 使用 fallback toast
+                try {
+                  await browser.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (message: string, duration: number, clickUrl?: string) => {
+                      const toast = document.createElement('div')
+                      toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 16px 20px;
+                        border-radius: 12px;
+                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                        font-size: 14px;
+                        max-width: 400px;
+                        z-index: 999999;
+                        cursor: pointer;
+                        display: flex;
+                        gap: 12px;
+                        align-items: start;
+                        animation: slideIn 0.3s ease-out;
+                      `
+                      toast.innerHTML =
+                        '<div style="font-size: 24px;">⏰</div>' +
+                        '<div style="flex: 1;">' +
+                        '<div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">日常提醒助手</div>' +
+                        '<div style="opacity: 0.95; line-height: 1.5;">' +
+                        message +
+                        '</div>' +
+                        '</div>' +
+                        '<button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">×</button>'
+
+                      const style = document.createElement('style')
+                      style.textContent =
+                        '@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }'
+                      document.head.appendChild(style)
+
+                      document.body.appendChild(toast)
+
+                      toast.addEventListener('click', (e) => {
+                        const target = e.target as HTMLElement
+                        if (target.tagName === 'BUTTON') {
+                          e.stopPropagation()
+                          toast.remove()
+                        } else if (clickUrl) {
+                          window.open(clickUrl, '_blank')
+                          toast.remove()
+                        }
+                      })
+
+                      setTimeout(() => {
+                        toast.style.animation = 'slideIn 0.3s ease-out reverse'
+                        setTimeout(() => toast.remove(), 300)
+                      }, duration)
+                    },
+                    args: [payload.message || '测试 Toast 消息', payload.duration || 10000, payload.url || ''],
+                  })
+                  toastSent = true
+                } catch (injectError) {
+                  console.log(`Failed to send test toast to tab ${tab.id}:`, injectError)
+                }
               }
             }
 

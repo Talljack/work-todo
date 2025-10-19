@@ -26,6 +26,7 @@ interface RuleEditorDialogProps {
 const RuleEditorDialog: React.FC<RuleEditorDialogProps> = ({ rule, open, onOpenChange, onSave }) => {
   const { t, i18n } = useTranslation()
   const [editingRule, setEditingRule] = useState<ReminderRule | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string>('')
 
   useEffect(() => {
     if (open) {
@@ -34,11 +35,77 @@ const RuleEditorDialog: React.FC<RuleEditorDialogProps> = ({ rule, open, onOpenC
       } else {
         setEditingRule(createDefaultReminderRule(i18n.language))
       }
+      setErrorMessage('') // 清除错误消息
     }
   }, [open, rule, i18n.language])
 
+  // 时间校验辅助函数
+  const parseTime = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    return hours * 60 + minutes
+  }
+
+  const validateTimes = (): boolean => {
+    if (!editingRule) return false
+
+    const startMinutes = parseTime(editingRule.startTime)
+    const deadlineMinutes = parseTime(editingRule.deadline)
+
+    // 1. 验证 Deadline > startTime（考虑跨午夜情况）
+    // 如果 deadline < startTime，说明是跨午夜的情况（如 23:30 - 00:30），这是允许的
+    // 但如果 deadline === startTime，则不允许
+    if (deadlineMinutes === startMinutes) {
+      setErrorMessage(t('options.rules.error.deadlineEqualStart', '截止时间不能等于开始时间'))
+      return false
+    }
+
+    // 2. 验证所有 Late Reminders > Deadline
+    for (let i = 0; i < editingRule.lateReminders.length; i++) {
+      const lateTime = editingRule.lateReminders[i]
+      if (!lateTime) continue // 跳过空值
+
+      const lateMinutes = parseTime(lateTime)
+
+      // 如果是跨午夜的规则（deadline < startTime）
+      if (deadlineMinutes < startMinutes) {
+        // Late reminder 可以在午夜之后（小于 deadline）或者在午夜之前（大于 startTime 之后的某个时间）
+        // 这种情况下，late reminder 应该在 deadline 之后
+        // 如果 lateMinutes > deadline 且 lateMinutes < startTime，说明在有效范围内
+        if (lateMinutes <= deadlineMinutes && lateMinutes < startMinutes) {
+          continue // 这是有效的
+        } else if (lateMinutes > deadlineMinutes && lateMinutes < startMinutes) {
+          setErrorMessage(
+            t(
+              'options.rules.error.lateReminderInvalid',
+              `迟到提醒时间 ${lateTime} 必须在截止时间 ${editingRule.deadline} 之后`,
+            ),
+          )
+          return false
+        }
+      } else {
+        // 非跨午夜的情况，late reminder 必须 > deadline
+        if (lateMinutes <= deadlineMinutes) {
+          setErrorMessage(
+            t(
+              'options.rules.error.lateReminderBeforeDeadline',
+              `迟到提醒时间 ${lateTime} 必须在截止时间 ${editingRule.deadline} 之后`,
+            ),
+          )
+          return false
+        }
+      }
+    }
+
+    return true
+  }
+
   const handleSave = () => {
     if (editingRule) {
+      // 验证时间
+      if (!validateTimes()) {
+        return // 验证失败，不保存
+      }
+
       onSave(editingRule)
       onOpenChange(false)
     }
@@ -309,6 +376,22 @@ const RuleEditorDialog: React.FC<RuleEditorDialogProps> = ({ rule, open, onOpenC
             </div>
           </div>
         </div>
+
+        {/* Error Message Display */}
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start gap-2">
+            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium">{errorMessage}</p>
+            </div>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
