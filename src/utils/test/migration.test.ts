@@ -134,7 +134,7 @@ describe('Configuration Migration Tests', () => {
       const rule = migratedConfig.reminderRules[0]
 
       // 验证规则字段正确迁移
-      expect(rule.name).toBe('例行任务提醒')
+      expect(rule.name).toBe('每日例行提醒')
       expect(rule.enabled).toBe(true)
       expect(rule.workDays).toEqual([true, true, true, true, true, false, false])
       expect(rule.startTime).toBe('09:00')
@@ -368,7 +368,7 @@ describe('Configuration Migration Tests', () => {
 
       expect(result.version).toBe(4)
       expect(result.reminderRules).toHaveLength(1)
-      expect(result.reminderRules[0].name).toBe('例行任务提醒')
+      expect(result.reminderRules[0].name).toBe('每日例行提醒')
       expect(result.reminderRules[0].workDays).toEqual([true, true, true, true, true, false, false])
       expect(result.reminderRules[0].toastClickUrl).toBe('')
     })

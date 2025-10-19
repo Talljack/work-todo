@@ -154,7 +154,7 @@ describe('Time Utils', () => {
 
       expect(result).not.toBeNull()
       expect(result!.getHours()).toBe(9)
-      expect(result!.getMinutes()).toBe(20) // 09:05 + 15 = 09:20
+      expect(result!.getMinutes()).toBe(15) // Next interval from 09:00 is 09:15
     })
 
     test('should return null when already sent', () => {

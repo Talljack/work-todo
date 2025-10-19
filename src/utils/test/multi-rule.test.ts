@@ -94,8 +94,8 @@ describe('Multi-Rule System Tests', () => {
 
       expect(nextTime).not.toBeNull()
       expect(nextTime?.getHours()).toBe(9)
-      // 9:05 + 15 min = 9:20
-      expect(nextTime?.getMinutes()).toBe(20)
+      // Next interval from 09:00 is 09:15
+      expect(nextTime?.getMinutes()).toBe(15)
     })
 
     test('should return late reminder after deadline', () => {
@@ -297,8 +297,8 @@ describe('Multi-Rule System Tests', () => {
 
       expect(nextTime).not.toBeNull()
       expect(nextTime?.getHours()).toBe(10)
-      // 9:30 + 60 min = 10:30
-      expect(nextTime?.getMinutes()).toBe(30)
+      // Next interval from 09:00 is 10:00
+      expect(nextTime?.getMinutes()).toBe(0)
     })
 
     test('should handle empty late reminders array', () => {
@@ -348,11 +348,11 @@ describe('Multi-Rule System Tests', () => {
       const testCases = [
         { time: '08:00', expectedHour: 9, expectedMin: 0 }, // Before start -> start time
         { time: '09:00', expectedHour: 9, expectedMin: 0 }, // At start time -> return current time
-        { time: '09:10', expectedHour: 9, expectedMin: 25 }, // 9:10 + 15 = 9:25
+        { time: '09:10', expectedHour: 9, expectedMin: 15 }, // Next interval from 09:00 is 09:15
         { time: '09:15', expectedHour: 9, expectedMin: 15 }, // At interval point -> return current time
-        { time: '09:20', expectedHour: 9, expectedMin: 35 }, // 9:20 + 15 = 9:35
+        { time: '09:20', expectedHour: 9, expectedMin: 30 }, // Next interval from 09:00 is 09:30
         { time: '09:30', expectedHour: 9, expectedMin: 30 }, // At interval point -> return current time
-        { time: '09:50', expectedHour: 10, expectedMin: 30 }, // 9:50 + 15 = 10:05 > deadline, so first late reminder 10:30
+        { time: '09:50', expectedHour: 10, expectedMin: 0 }, // Next interval from 09:00 is 10:00 (deadline)
         { time: '10:10', expectedHour: 10, expectedMin: 30 }, // Past deadline -> first late reminder
         { time: '10:30', expectedHour: 10, expectedMin: 30 }, // At late reminder point -> return current time
         { time: '10:40', expectedHour: 11, expectedMin: 0 }, // Past first late -> second late reminder
@@ -381,9 +381,9 @@ describe('Multi-Rule System Tests', () => {
       const testCases = [
         { time: '14:00', expectedHour: 15, expectedMin: 0 }, // Before start -> start time
         { time: '15:00', expectedHour: 15, expectedMin: 0 }, // At start time -> return current time
-        { time: '15:20', expectedHour: 15, expectedMin: 50 }, // 15:20 + 30 = 15:50
+        { time: '15:20', expectedHour: 15, expectedMin: 30 }, // Next interval from 15:00 is 15:30
         { time: '15:30', expectedHour: 15, expectedMin: 30 }, // At interval point -> return current time
-        { time: '15:40', expectedHour: 16, expectedMin: 30 }, // 15:40 + 30 = 16:10 > deadline, so late reminder 16:30
+        { time: '15:40', expectedHour: 16, expectedMin: 0 }, // Next interval from 15:00 is 16:00 (deadline)
         { time: '16:10', expectedHour: 16, expectedMin: 30 }, // Past deadline -> late reminder
         { time: '16:30', expectedHour: 16, expectedMin: 30 }, // At late reminder point -> return current time
       ]

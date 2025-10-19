@@ -137,7 +137,7 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
 
       expect(activeRule).not.toBeNull()
       expect(activeRule?.name).toBe('Daily Routine Reminder')
-      expect(activeRule?.id).toBe('work-plan')
+      expect(activeRule?.id).toBe('daily-routine')
 
       const nextTime = getNextReminderTime(now, activeRule!, state)
       expect(nextTime?.getHours()).toBe(11)
@@ -153,7 +153,8 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
 
       const nextTime = getNextReminderTime(now, activeRule!, state)
       expect(nextTime?.getHours()).toBe(11)
-      expect(nextTime?.getMinutes()).toBe(30)
+      // Intervals: 11:00, 11:20, 11:40, 12:00. At 11:30, next is 11:40
+      expect(nextTime?.getMinutes()).toBe(40)
     })
 
     test('Monday 13:00 - Should show Sleep Reminder (Daily Routine ended)', () => {
