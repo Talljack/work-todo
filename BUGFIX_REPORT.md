@@ -90,8 +90,8 @@ export default defineConfig({
 
 **修复后：**
 
-- popup: "Work TODO Reminder"
-- options: "Work TODO Reminder - Settings"
+- popup: "Routine Reminder"
+- options: "Routine Reminder - Settings"
 
 ## 验证步骤
 
@@ -105,7 +105,7 @@ pnpm build
 ### 2. 重新加载扩展
 
 1. 打开 `chrome://extensions/`
-2. 找到"工作 TODO 提醒"扩展
+2. 找到"日常提醒助手"扩展
 3. 点击"刷新"图标（或移除后重新加载）
 
 ### 3. 测试功能
@@ -147,7 +147,7 @@ dist/
 
 - [ ] Popup 打开测试
   - 点击扩展图标
-  - 预期：显示 Popup 界面（渐变色头部、TODO 模板、状态显示）
+  - 预期：显示 Popup 界面（渐变色头部、提醒模板、状态显示）
 - [ ] Service Worker 测试
   - 查看扩展管理页面
   - 预期：Service Worker 状态正常，显示时间戳

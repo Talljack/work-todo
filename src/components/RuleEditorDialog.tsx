@@ -107,7 +107,7 @@ const RuleEditorDialog: React.FC<RuleEditorDialogProps> = ({ rule, open, onOpenC
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setEditingRule({ ...editingRule, name: e.target.value })
                 }
-                placeholder={t('options.rules.namePlaceholder', 'e.g., Work Plan Reminder')}
+                placeholder={t('options.rules.namePlaceholder', 'e.g., Morning Routine')}
               />
             </div>
 
@@ -236,7 +236,7 @@ const RuleEditorDialog: React.FC<RuleEditorDialogProps> = ({ rule, open, onOpenC
                   setEditingRule({ ...editingRule, notificationMessage: e.target.value })
                 }
                 rows={2}
-                placeholder={t('options.rules.notificationMessagePlaceholder', "Don't forget to send your work plan!")}
+                placeholder={t('options.rules.notificationMessagePlaceholder', "Don't forget today's routine!")}
               />
             </div>
           </div>

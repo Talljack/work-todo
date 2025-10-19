@@ -10,16 +10,16 @@ import type { ReminderRule, DailyState } from '../src/types'
 const testRules: ReminderRule[] = [
   {
     id: 'rule-1',
-    name: '工作计划提醒',
+    name: '每日例行提醒',
     enabled: true,
-    workDays: [true, true, true, true, true, false, false], // Mon-Fri
+    workDays: [true, true, true, true, true, true, true], // Every day
     startTime: '09:00',
-    interval: 15,
+    interval: 30,
     deadline: '10:00',
-    lateReminders: ['10:30', '11:00'],
-    notificationTitle: '提醒：发送今日 TODO',
-    notificationMessage: '别忘了发送今日工作计划！',
-    toastMessage: '别忘了发送今日工作计划！',
+    lateReminders: ['12:00'],
+    notificationTitle: '提醒：今日例行检查',
+    notificationMessage: '别忘了今天的例行任务！',
+    toastMessage: '别忘了完成今日例行任务！',
     toastDuration: 10,
   },
   {
@@ -69,21 +69,21 @@ const testRules: ReminderRule[] = [
 // 测试场景
 const testScenarios = [
   {
-    name: '工作日上午 8:30 - 应该找到 09:00 的工作计划提醒',
+    name: '工作日上午 8:30 - 应该找到 09:00 的例行任务提醒',
     now: new Date('2025-10-17T08:30:00'), // Friday
-    expectedRuleName: '工作计划提醒',
+    expectedRuleName: '例行任务提醒',
     expectedTime: '09:00',
   },
   {
-    name: '工作日上午 9:00 - 应该找到 09:00 的工作计划提醒',
+    name: '工作日上午 9:00 - 应该找到 09:00 的例行任务提醒',
     now: new Date('2025-10-17T09:00:00'), // Friday
-    expectedRuleName: '工作计划提醒',
+    expectedRuleName: '例行任务提醒',
     expectedTime: '09:00',
   },
   {
-    name: '工作日上午 9:30 - 应该找到 09:45 的工作计划提醒',
+    name: '工作日上午 9:30 - 应该找到 09:45 的例行任务提醒',
     now: new Date('2025-10-17T09:30:00'), // Friday
-    expectedRuleName: '工作计划提醒',
+    expectedRuleName: '例行任务提醒',
     expectedTime: '09:45',
   },
   {
