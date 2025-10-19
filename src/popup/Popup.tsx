@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AppConfig, DailyState, ReminderRule } from '@/types'
 import { getConfig, getDailyState } from '@/utils/storage'
-import { formatTime, isWorkDay, getNextReminderTime } from '@/utils/time'
+import { formatTime, formatTimeString, isWorkDay, getNextReminderTime } from '@/utils/time'
 
 const Popup: React.FC = () => {
   const { t } = useTranslation()
@@ -39,28 +39,18 @@ const Popup: React.FC = () => {
     return () => clearInterval(timer)
   }, [])
 
-  // 复制模板
-  const handleCopyTemplate = async () => {
-    if (!config) return
-
+  // 标记规则为已完成
+  const handleMarkRuleAsCompleted = async (ruleId: string) => {
     try {
-      await navigator.clipboard.writeText(getTemplateContent())
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
-      console.error('Failed to copy:', error)
-    }
-  }
-
-  // 标记已发送
-  const handleMarkAsSent = async () => {
-    try {
-      await browser.runtime.sendMessage({ type: 'MARK_SENT' })
+      await browser.runtime.sendMessage({
+        type: 'MARK_RULE_COMPLETED',
+        payload: { ruleId },
+      })
       // 重新加载状态
       const newState = await getDailyState()
       setState(newState)
     } catch (error) {
-      console.error('Failed to mark as sent:', error)
+      console.error('Failed to mark rule as completed:', error)
     }
   }
 
@@ -93,14 +83,18 @@ const Popup: React.FC = () => {
     return isWorkDay(new Date(), rule)
   })
 
-  // 获取即将触发的规则（下一个提醒时间最早的规则）
-  // 用于确定提醒时间和Mark as Done按钮
+  // 获取下一个未完成的规则（下一个提醒时间最早的规则）
   const getNextRuleEntry = (): { rule: ReminderRule; time: Date } | null => {
     const now = currentTime
     let best: { rule: ReminderRule; time: Date } | null = null
 
     for (const rule of config.reminderRules) {
       if (!rule.enabled) continue
+
+      // 跳过已完成的规则
+      if (state.completedRules.includes(rule.id)) {
+        continue
+      }
 
       const nextTime = getNextReminderTime(now, rule, state)
       if (!nextTime) continue
@@ -124,9 +118,16 @@ const Popup: React.FC = () => {
     return config.template.content
   }
 
+  const timeFormat = config.timeFormat ?? '24h'
+
   const nextDetailRule = nextActiveRule
 
-  // 计算距离下一次提醒的时间，而不是距离deadline
+  // 检查所有启用的规则是否都已完成
+  const enabledRules = config.reminderRules.filter((rule) => rule.enabled)
+  const allRulesCompleted =
+    enabledRules.length > 0 && enabledRules.every((rule) => state.completedRules.includes(rule.id))
+
+  // 计算距离下一次提醒的时间
   const getTimeUntilNextReminder = (): {
     isPastDeadline: boolean
     hours: number
@@ -184,11 +185,11 @@ const Popup: React.FC = () => {
           </button>
         </div>
 
-        <div className="text-sm text-white/90">{formatTime(currentTime)}</div>
+        <div className="text-sm text-white/90">{formatTime(currentTime, timeFormat)}</div>
 
         {/* 状态指示器 */}
         <div className="mt-4 flex items-center">
-          {isToday && state.sent ? (
+          {isToday && allRulesCompleted ? (
             <div className="flex items-center bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-medium">
               <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                 <path
@@ -227,118 +228,80 @@ const Popup: React.FC = () => {
 
       {/* 主体内容 */}
       <div className="p-6 space-y-4">
-        {/* 当前激活的规则信息 */}
-        {nextDetailRule && (
+        {/* 当前规则 - 简洁展示 */}
+        {nextDetailRule ? (
           <div className="card space-y-3">
+            {/* 规则标题和时间 */}
             <div>
-              <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('popup.activeRule', 'Active Rule')}</h2>
-              <div className="rounded border border-gray-200 bg-white p-3 space-y-1">
-                <div className="text-sm font-semibold text-primary-700">{nextDetailRule.name}</div>
-                <div className="text-xs text-gray-500">
-                  {nextDetailRule.startTime} - {nextDetailRule.deadline} ·{' '}
-                  {t('popup.everyMinutes', { minutes: nextDetailRule.interval })}
+              <h2 className="text-base font-semibold text-gray-800">{nextDetailRule.name}</h2>
+              <div className="text-xs text-gray-500 mt-1">
+                {formatTimeString(nextDetailRule.startTime, timeFormat)} -{' '}
+                {formatTimeString(nextDetailRule.deadline, timeFormat)} ·{' '}
+                {t('popup.everyMinutes', { minutes: nextDetailRule.interval })}
+              </div>
+              {nextDetailRule.notificationTitle && (
+                <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                  </svg>
+                  <span>{nextDetailRule.notificationTitle}</span>
                 </div>
-                {nextReminderTime && (
-                  <div className="text-xs text-gray-500">
-                    {t('popup.nextReminderAt', 'Next reminder at')} {formatTime(nextReminderTime)}
-                  </div>
-                )}
+              )}
+            </div>
+
+            {/* 提醒内容 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-gray-700">
+                  {t('popup.ruleTemplateLabel', 'Reminder Content')}
+                </h3>
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(getTemplateContent())
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    } catch (error) {
+                      console.error('Failed to copy:', error)
+                    }
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-700"
+                >
+                  {copied ? t('popup.template.copied') : t('popup.template.copy')}
+                </button>
+              </div>
+              <div className="prose prose-sm max-w-none bg-white p-3 rounded border border-gray-200 max-h-48 overflow-y-auto">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{getTemplateContent()}</ReactMarkdown>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="rounded border border-gray-200 p-3 bg-white space-y-2">
-                <div className="text-xs font-medium text-gray-500">
-                  {t('popup.notificationSettings', 'Notification Settings')}
-                </div>
-                <div className="bg-gray-50 p-2 rounded border border-gray-200 text-sm text-gray-800">
-                  <div className="font-medium">{nextDetailRule.notificationTitle}</div>
-                  <div className="mt-1 whitespace-pre-line text-gray-600">{nextDetailRule.notificationMessage}</div>
-                </div>
-              </div>
-
-              <div className="rounded border border-gray-200 p-3 bg-white space-y-2">
-                <div className="text-xs font-medium text-gray-500">{t('popup.toastSettings', 'Toast Settings')}</div>
-                <div className="bg-gray-50 p-2 rounded border border-gray-200 text-sm text-gray-800">
-                  <div className="whitespace-pre-line">{nextDetailRule.toastMessage}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {t('popup.toastDurationLabel', 'Toast Duration')}: {nextDetailRule.toastDuration}s
-                  </div>
-                  {nextDetailRule.toastClickUrl && nextDetailRule.toastClickUrl.trim() !== '' && (
-                    <a
-                      href={nextDetailRule.toastClickUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-xs text-primary-600 hover:underline break-all mt-1"
-                    >
-                      {nextDetailRule.toastClickUrl}
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {nextDetailRule?.templateContent && (
-          <div className="card">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-700">
-                {t('popup.ruleTemplateLabel', 'Routine Template')}
-              </h2>
+            {/* 完成按钮 */}
+            {!allRulesCompleted && isTodayWorkDay && (
               <button
-                onClick={handleCopyTemplate}
-                className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                onClick={() => handleMarkRuleAsCompleted(nextActiveRule.id)}
+                className="w-full btn-primary py-3 text-base shadow-md hover:shadow-lg"
               >
-                {copied ? (
-                  <span className="flex items-center text-green-600">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {t('popup.template.copied')}
-                  </span>
-                ) : (
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                    {t('popup.template.copy')}
-                  </span>
-                )}
+                <span className="flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {t('popup.actions.markSent')}
+                </span>
               </button>
-            </div>
-            <div className="prose prose-sm max-w-none bg-gray-50 p-3 rounded border border-gray-200 max-h-48 overflow-y-auto">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{nextDetailRule.templateContent}</ReactMarkdown>
-            </div>
+            )}
+          </div>
+        ) : (
+          // 没有规则时显示提示
+          <div className="text-center text-gray-500 py-8">
+            {allRulesCompleted
+              ? t('popup.allCompleted', 'All tasks completed for today!')
+              : t('popup.noRules', 'No active reminders.')}
           </div>
         )}
-
-        {/* 操作按钮 */}
-        <div className="space-y-2">
-          {!state.sent && isTodayWorkDay && (
-            <button onClick={handleMarkAsSent} className="w-full btn-primary py-3 text-base shadow-md hover:shadow-lg">
-              <span className="flex items-center justify-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {t('popup.actions.markSent')}
-              </span>
-            </button>
-          )}
-        </div>
       </div>
     </div>
   )

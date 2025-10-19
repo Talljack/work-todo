@@ -1,12 +1,23 @@
 import browser from 'webextension-polyfill'
 import type { BackgroundMessage, BackgroundResponse } from '@/types'
-import { getConfig, getDailyState, markAsSent, resetDailyState, onConfigChanged } from '@/utils/storage'
+import {
+  getConfig,
+  getDailyState,
+  markAsSent,
+  markRuleAsCompleted,
+  resetDailyState,
+  onConfigChanged,
+} from '@/utils/storage'
 import { getNextReminderTime, shouldResetState, getNextMidnight } from '@/utils/time'
 
 const ALARM_NAMES = {
   REMINDER: 'todo-reminder',
   MIDNIGHT_RESET: 'midnight-reset',
 } as const
+
+// 防抖：记录上次提醒时间，防止重复触发
+let lastReminderTime = 0
+const REMINDER_DEBOUNCE_MS = 30000 // 30秒内不重复触发
 
 /**
  * 初始化闹钟系统
@@ -34,7 +45,7 @@ async function initAlarms(): Promise<void> {
 
 /**
  * 安排下一次提醒
- * 遍历所有启用的规则，找出最早的下一次提醒时间
+ * 遍历所有启用的规则，找出最早的下一次提醒时间（跳过已完成的规则）
  */
 async function scheduleNextReminder(): Promise<void> {
   const config = await getConfig()
@@ -44,9 +55,15 @@ async function scheduleNextReminder(): Promise<void> {
   let earliestTime: Date | null = null
   let earliestRule: string | null = null
 
-  // 遍历所有启用的规则，找出最早的提醒时间
+  // 遍历所有启用的规则，找出最早的提醒时间（跳过已完成的）
   for (const rule of config.reminderRules) {
     if (!rule.enabled) continue
+
+    // 跳过已完成的规则
+    if (state.completedRules.includes(rule.id)) {
+      console.log(`Rule "${rule.name}" is already completed, skipping scheduling`)
+      continue
+    }
 
     const nextTime = getNextReminderTime(now, rule, state)
     if (nextTime) {
@@ -82,26 +99,44 @@ async function scheduleMidnightReset(): Promise<void> {
  * 检查所有启用的规则，触发当前时间应该提醒的规则
  */
 async function handleReminder(): Promise<void> {
+  // 防抖：如果距离上次触发时间小于30秒，跳过
+  const now = Date.now()
+  if (now - lastReminderTime < REMINDER_DEBOUNCE_MS) {
+    console.log('Debouncing: Reminder triggered too soon after last one, skipping...')
+    return
+  }
+  lastReminderTime = now
+
   // 首先清除所有现有的提醒闹钟，防止休眠后积压的闹钟重复触发
   await browser.alarms.clear(ALARM_NAMES.REMINDER)
 
   const state = await getDailyState()
   const config = await getConfig()
-  const now = new Date()
+  const currentTime = new Date()
 
-  // 已发送则跳过，直接安排下一次（如果有的话）
-  if (state.sent) {
-    console.log('Already sent today, skipping reminder')
+  // 检查所有启用的规则是否都已完成
+  const enabledRules = config.reminderRules.filter((rule) => rule.enabled)
+  const allCompleted = enabledRules.length > 0 && enabledRules.every((rule) => state.completedRules.includes(rule.id))
+
+  if (allCompleted) {
+    console.log('All enabled rules completed today, skipping reminder')
     await scheduleNextReminder()
     return
   }
 
-  // 找出当前时间应该提醒的所有规则
+  // 找出当前时间应该提醒的所有规则（排除已完成的）
   const rulesToRemind = config.reminderRules.filter((rule) => {
     if (!rule.enabled) return false
-    const nextTime = getNextReminderTime(now, rule, state)
+
+    // 跳过已完成的规则
+    if (state.completedRules.includes(rule.id)) {
+      console.log(`Rule "${rule.name}" is already completed, skipping`)
+      return false
+    }
+
+    const nextTime = getNextReminderTime(currentTime, rule, state)
     // 如果下一次提醒时间在1分钟内，认为应该现在提醒
-    return nextTime && nextTime.getTime() - now.getTime() <= 60000
+    return nextTime && nextTime.getTime() - currentTime.getTime() <= 60000
   })
 
   if (rulesToRemind.length === 0) {
@@ -114,40 +149,152 @@ async function handleReminder(): Promise<void> {
 
   // 为每个规则发送通知和Toast
   for (const rule of rulesToRemind) {
+    console.log(`Processing rule: ${rule.name}`)
+
     // 1. 发送系统通知
-    await browser.notifications.create({
-      type: 'basic',
-      iconUrl: 'src/assets/icon.png',
-      title: rule.notificationTitle,
-      message: rule.notificationMessage,
-      priority: 2,
-    })
+    try {
+      await browser.notifications.create({
+        type: 'basic',
+        iconUrl: browser.runtime.getURL('src/assets/icons/icon-128.png'),
+        title: rule.notificationTitle,
+        message: rule.notificationMessage,
+        priority: 2,
+      })
+      console.log('✓ Notification created')
+    } catch (error) {
+      console.error('✗ Failed to create notification:', error)
+    }
 
     // 2. 在所有标签页显示 Toast 提醒
     try {
       const tabs = await browser.tabs.query({})
+      console.log(`Found ${tabs.length} total tabs`)
+
+      let toastSent = false
+      let validTabCount = 0
+
       for (const tab of tabs) {
-        if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-          await browser.tabs
-            .sendMessage(tab.id, {
-              type: 'SHOW_TOAST',
-              message: rule.toastMessage,
-              duration: rule.toastDuration * 1000, // 转换为毫秒
-              url: rule.toastClickUrl, // 可选的点击后打开的 URL
+        if (!tab.id || !tab.url) continue
+
+        // 排除特殊页面
+        if (
+          tab.url.startsWith('chrome://') ||
+          tab.url.startsWith('chrome-extension://') ||
+          tab.url.startsWith('about:') ||
+          tab.url.startsWith('edge://')
+        ) {
+          console.log(`Skipping special tab: ${tab.url}`)
+          continue
+        }
+
+        validTabCount++
+        console.log(`Attempting to send toast to tab ${tab.id}: ${tab.url}`)
+
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            type: 'SHOW_TOAST',
+            message: rule.toastMessage,
+            duration: rule.toastDuration * 1000,
+            url: rule.toastClickUrl,
+            backgroundColor: config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          })
+          toastSent = true
+          console.log(`✓ Toast sent to tab ${tab.id}`)
+        } catch {
+          // 如果content script未注入，使用简单的原生通知样式
+          console.log(`✗ Content script not available in tab ${tab.id}, using fallback toast...`)
+          try {
+            await browser.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (message: string, duration: number, backgroundColor: string, clickUrl?: string) => {
+                const toast = document.createElement('div')
+                toast.style.cssText = `
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  background: ${backgroundColor};
+                  color: white;
+                  padding: 16px 20px;
+                  border-radius: 12px;
+                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                  font-size: 14px;
+                  max-width: 400px;
+                  z-index: 999999;
+                  cursor: pointer;
+                  display: flex;
+                  gap: 12px;
+                  align-items: start;
+                  animation: slideIn 0.3s ease-out;
+                `
+                toast.innerHTML =
+                  '<div style="font-size: 24px;">⏰</div>' +
+                  '<div style="flex: 1;">' +
+                  '<div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">日常提醒助手</div>' +
+                  '<div style="opacity: 0.95; line-height: 1.5;">' +
+                  message +
+                  '</div>' +
+                  '</div>' +
+                  '<button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">×</button>'
+
+                const style = document.createElement('style')
+                style.textContent =
+                  '@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }'
+                document.head.appendChild(style)
+
+                document.body.appendChild(toast)
+
+                toast.addEventListener('click', (e) => {
+                  const target = e.target as HTMLElement
+                  if (target.tagName === 'BUTTON') {
+                    e.stopPropagation()
+                    toast.remove()
+                  } else if (clickUrl) {
+                    window.open(clickUrl, '_blank')
+                    toast.remove()
+                  }
+                })
+
+                setTimeout(() => {
+                  toast.style.animation = 'slideIn 0.3s ease-out reverse'
+                  setTimeout(() => toast.remove(), 300)
+                }, duration)
+              },
+              args: [
+                rule.toastMessage,
+                rule.toastDuration * 1000,
+                config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                rule.toastClickUrl,
+              ],
             })
-            .catch(() => {
-              // 忽略无法注入的页面（如 chrome:// 页面）
-            })
+            toastSent = true
+            console.log(`✓ Fallback toast shown in tab ${tab.id}`)
+          } catch (injectError) {
+            console.log(`✗ Failed to show fallback toast in tab ${tab.id}:`, injectError)
+          }
         }
       }
+
+      console.log(`Valid tabs found: ${validTabCount}, Toast sent: ${toastSent}`)
+
+      if (!toastSent) {
+        console.warn('⚠️ No valid tabs available for toast notification.')
+      }
     } catch (error) {
-      console.log('Failed to show toast:', error)
+      console.error('Failed to show toast:', error)
     }
   }
 
-  // 3. 更新 Badge
-  await browser.action.setBadgeText({ text: '!' })
-  await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
+  // 3. 更新 Badge（只在触发提醒时显示，而不是只要有未完成的就显示）
+  if (rulesToRemind.length > 0) {
+    // 当前有 rule 正在提醒，显示 badge
+    await browser.action.setBadgeText({ text: '!' })
+    await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
+    console.log(`Badge set for ${rulesToRemind.length} active rule(s)`)
+  } else {
+    // 当前没有 rule 需要提醒，不显示 badge
+    await browser.action.setBadgeText({ text: '' })
+    console.log('No active reminders, badge cleared')
+  }
 
   // 4. 安排下一次提醒
   await scheduleNextReminder()
@@ -229,9 +376,141 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
           await handleMarkAsSent()
           return { success: true }
 
+        case 'MARK_RULE_COMPLETED': {
+          const ruleId = msg.payload?.ruleId
+          if (!ruleId) {
+            return { success: false, error: 'Missing ruleId' }
+          }
+          await markRuleAsCompleted(ruleId)
+
+          console.log(`Rule ${ruleId} marked as completed`)
+
+          // 立即清除当前 Badge（因为当前活跃的 rule 已完成）
+          await browser.action.setBadgeText({ text: '' })
+          console.log('Badge cleared for completed rule')
+
+          // 重新安排下一次提醒（切换到下一条未完成的 rule）
+          await scheduleNextReminder()
+
+          return { success: true }
+        }
+
         case 'OPEN_OPTIONS':
           await browser.runtime.openOptionsPage()
           return { success: true }
+
+        case 'TEST_TOAST': {
+          // 测试 Toast 消息
+          const payload = msg.payload || {}
+          console.log('Testing toast with message:', payload.message)
+
+          try {
+            const config = await getConfig()
+            const tabs = await browser.tabs.query({})
+            let toastSent = false
+
+            for (const tab of tabs) {
+              if (!tab.id || !tab.url) continue
+              if (
+                tab.url.startsWith('chrome://') ||
+                tab.url.startsWith('chrome-extension://') ||
+                tab.url.startsWith('about:') ||
+                tab.url.startsWith('edge://')
+              ) {
+                continue
+              }
+
+              try {
+                await browser.tabs.sendMessage(tab.id, {
+                  type: 'SHOW_TOAST',
+                  message: payload.message || '测试 Toast 消息',
+                  duration: payload.duration || 10000,
+                  url: payload.url || '',
+                  backgroundColor: config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                })
+                toastSent = true
+              } catch {
+                // 使用 fallback toast
+                try {
+                  await browser.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (message: string, duration: number, backgroundColor: string, clickUrl?: string) => {
+                      const toast = document.createElement('div')
+                      toast.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: ${backgroundColor};
+                        color: white;
+                        padding: 16px 20px;
+                        border-radius: 12px;
+                        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                        font-size: 14px;
+                        max-width: 400px;
+                        z-index: 999999;
+                        cursor: pointer;
+                        display: flex;
+                        gap: 12px;
+                        align-items: start;
+                        animation: slideIn 0.3s ease-out;
+                      `
+                      toast.innerHTML =
+                        '<div style="font-size: 24px;">⏰</div>' +
+                        '<div style="flex: 1;">' +
+                        '<div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">日常提醒助手</div>' +
+                        '<div style="opacity: 0.95; line-height: 1.5;">' +
+                        message +
+                        '</div>' +
+                        '</div>' +
+                        '<button style="background: rgba(255,255,255,0.2); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">×</button>'
+
+                      const style = document.createElement('style')
+                      style.textContent =
+                        '@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }'
+                      document.head.appendChild(style)
+
+                      document.body.appendChild(toast)
+
+                      toast.addEventListener('click', (e) => {
+                        const target = e.target as HTMLElement
+                        if (target.tagName === 'BUTTON') {
+                          e.stopPropagation()
+                          toast.remove()
+                        } else if (clickUrl) {
+                          window.open(clickUrl, '_blank')
+                          toast.remove()
+                        }
+                      })
+
+                      setTimeout(() => {
+                        toast.style.animation = 'slideIn 0.3s ease-out reverse'
+                        setTimeout(() => toast.remove(), 300)
+                      }, duration)
+                    },
+                    args: [
+                      payload.message || '测试 Toast 消息',
+                      payload.duration || 10000,
+                      config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      payload.url || '',
+                    ],
+                  })
+                  toastSent = true
+                } catch (injectError) {
+                  console.log(`Failed to send test toast to tab ${tab.id}:`, injectError)
+                }
+              }
+            }
+
+            if (!toastSent) {
+              console.warn('⚠️ No valid tabs available for test toast.')
+            }
+
+            return { success: true }
+          } catch (error) {
+            console.error('Error sending test toast:', error)
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+          }
+        }
 
         default:
           return { success: false, error: 'Unknown message type' }
@@ -262,7 +541,7 @@ browser.commands.onCommand.addListener(async (command) => {
       // 显示通知确认
       await browser.notifications.create({
         type: 'basic',
-        iconUrl: 'src/assets/icon.png',
+        iconUrl: browser.runtime.getURL('src/assets/icons/icon-128.png'),
         title: '✅ 已标记为已发送',
         message: '今日 TODO 已标记为已发送',
         priority: 1,

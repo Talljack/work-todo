@@ -64,6 +64,8 @@ export interface TodoTemplate {
 /**
  * 应用配置
  */
+export type TimeFormat = '24h' | '12h'
+
 export interface AppConfig {
   /** 提醒规则列表 */
   reminderRules: ReminderRule[]
@@ -71,6 +73,10 @@ export interface AppConfig {
   template: TodoTemplate
   /** 时区（仅显示用） */
   timezone: string
+  /** 时间制式 */
+  timeFormat: TimeFormat
+  /** Toast 弹窗背景色（CSS gradient） */
+  toastBackgroundColor?: string
   /** 配置版本号，用于迁移 */
   version: number
   /** 旧版配置（用于迁移兼容）*/
@@ -148,9 +154,9 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
     enabled: true,
     workDays: [true, true, true, true, true, true, true], // Every day
     startTime: '09:00',
-    interval: 30,
+    interval: 10,
     deadline: '10:00',
-    lateReminders: ['12:00'],
+    lateReminders: ['10:30'],
     notificationTitle: isChinese ? '提醒：今日例行检查' : 'Reminder: Daily routine check-in',
     notificationMessage: isChinese
       ? '别忘了今天的例行任务！点击查看详情。'
@@ -166,10 +172,12 @@ export const createDefaultReminderRule = (lang?: string): ReminderRule => {
  * 默认配置
  */
 export const DEFAULT_CONFIG: AppConfig = {
-  version: 5, // 版本 5: 为每个规则添加 templateContent 字段，支持 Markdown
+  version: 6, // 版本 6: 新增时间制式配置
   reminderRules: [createDefaultReminderRule()],
   template: {
     content: getDefaultTemplateContent(),
   },
   timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
+  timeFormat: '24h',
+  toastBackgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
 }

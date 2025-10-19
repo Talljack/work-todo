@@ -3,7 +3,7 @@ import type { ReminderRule, DailyState } from '@/types'
 import { getNextReminderTime } from '@/utils/time'
 
 describe('Popup Display Logic - Multi-Rule Scenarios', () => {
-  const state: DailyState = { date: '', sent: false }
+  const state: DailyState = { date: '', completedRules: [] }
 
   // 创建例行任务提醒规则（周一到周五，11:00-12:00）
   const dailyRoutineRule: ReminderRule = {
@@ -198,7 +198,10 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
     })
 
     test('Should handle already sent state', () => {
-      const sentState: DailyState = { date: '2025-10-20', sent: true }
+      const sentState: DailyState = {
+        date: '2025-10-20',
+        completedRules: ['daily-routine', 'sleep'], // 包含两个rule的ID
+      }
       const now = new Date('2025-10-20T11:00:00')
 
       const nextTimeDailyRoutine = getNextReminderTime(now, dailyRoutineRule, sentState)

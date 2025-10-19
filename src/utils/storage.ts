@@ -23,15 +23,36 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     (typeof navigator !== 'undefined' ? navigator.language : 'en')
   const isChinese = currentLang.startsWith('zh')
 
-  // 如果已经是最新版本（v5），直接返回
-  if (oldConfig.version && oldConfig.version >= 5 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+  const ensureTimeFormat = (format?: AppConfig['timeFormat']): AppConfig['timeFormat'] =>
+    format === '12h' ? '12h' : '24h'
+
+  // 如果已经是最新版本（v6），直接返回
+  if (oldConfig.version && oldConfig.version >= 6 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     return {
       ...DEFAULT_CONFIG,
       ...oldConfig,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
     } as AppConfig
   }
 
-  // v4 -> v5: 为每个规则添加 templateContent 字段（如果没有的话）
+  if (oldConfig.version === 5 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+    console.log('[migrateConfig] Migrating from v5 to v6')
+
+    const newConfig: AppConfig = {
+      ...oldConfig,
+      version: 6,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+      reminderRules: oldConfig.reminderRules,
+      template: {
+        content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
+      },
+      timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+    } as AppConfig
+
+    return newConfig
+  }
+
+  // v4 -> v6: 为每个规则添加 templateContent 字段（如果没有的话）
   if (oldConfig.version === 4 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     console.log('[migrateConfig] Migrating from v4 to v5')
 
@@ -45,19 +66,20 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     })
 
     const newConfig: AppConfig = {
-      version: 5,
+      version: 6,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
     }
 
-    console.log('[migrateConfig] v4 -> v5 migration complete', newConfig)
+    console.log('[migrateConfig] v4 -> v6 migration complete', newConfig)
     return newConfig
   }
 
-  // v3 -> v5: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
+  // v3 -> v6: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
   if (oldConfig.version === 3 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     console.log('[migrateConfig] Migrating from v3 to v5')
 
@@ -76,19 +98,20 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     })
 
     const newConfig: AppConfig = {
-      version: 5,
+      version: 6,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
     }
 
-    console.log('[migrateConfig] v3 -> v5 migration complete', newConfig)
+    console.log('[migrateConfig] v3 -> v6 migration complete', newConfig)
     return newConfig
   }
 
-  // v2 -> v5: 将 template.quickLinks 迁移到 toastClickUrl
+  // v2 -> v6: 将 template.quickLinks 迁移到 toastClickUrl
   if (oldConfig.version === 2 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     console.log('[migrateConfig] Migrating from v2 to v5')
 
@@ -105,17 +128,18 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     })
 
     return {
-      version: 5,
+      version: 6,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
     }
   }
 
-  // v1 -> v5: 将旧的 workDays 配置转换为一个 ReminderRule
-  console.log('[migrateConfig] Migrating from v1 to v5')
+  // v1 -> v6: 将旧的 workDays 配置转换为一个 ReminderRule
+  console.log('[migrateConfig] Migrating from v1 to v6')
 
   const reminderRules: ReminderRule[] = []
 
@@ -150,12 +174,13 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
   }
 
   const newConfig: AppConfig = {
-    version: 5,
+    version: 6,
     reminderRules,
     template: {
       content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
     },
     timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+    timeFormat: ensureTimeFormat(oldConfig.timeFormat),
   }
 
   console.log('[migrateConfig] Migration complete', newConfig)
@@ -186,8 +211,10 @@ export async function getConfig(): Promise<AppConfig> {
       // 迁移旧配置
       const config = migrateConfig(saved)
 
+      config.timeFormat = config.timeFormat ?? '24h'
+
       // 如果是迁移的配置，自动保存新格式
-      if (!saved.version || saved.version < 5) {
+      if (!saved.version || saved.version < 6 || saved.timeFormat === undefined) {
         console.log('[getConfig] Saving migrated config')
         await saveConfig(config)
       }
@@ -218,6 +245,7 @@ export async function getConfig(): Promise<AppConfig> {
         ...DEFAULT_CONFIG.template,
         content: getDefaultTemplateContent(currentLang),
       },
+      timeFormat: DEFAULT_CONFIG.timeFormat,
     }
 
     return defaultConfig
@@ -232,8 +260,13 @@ export async function getConfig(): Promise<AppConfig> {
  */
 export async function saveConfig(config: AppConfig): Promise<void> {
   try {
+    const normalizedConfig: AppConfig = {
+      ...config,
+      timeFormat: config.timeFormat === '12h' ? '12h' : '24h',
+      version: config.version ?? DEFAULT_CONFIG.version,
+    }
     await browser.storage.sync.set({
-      [STORAGE_KEYS.CONFIG]: config,
+      [STORAGE_KEYS.CONFIG]: normalizedConfig,
     })
   } catch (error) {
     console.error('Failed to save config:', error)
@@ -248,7 +281,45 @@ export async function getDailyState(): Promise<DailyState> {
   try {
     const result = await browser.storage.local.get(STORAGE_KEYS.DAILY_STATE)
     if (result[STORAGE_KEYS.DAILY_STATE]) {
-      return result[STORAGE_KEYS.DAILY_STATE] as DailyState
+      const state = result[STORAGE_KEYS.DAILY_STATE] as DailyState
+
+      // 迁移旧的 sent 状态到新的 completedRules
+      if (state.sent !== undefined) {
+        let completedRules: string[] = []
+
+        if (state.sent) {
+          // 如果旧版本标记为已完成，需要获取当前所有启用的规则 ID
+          // 这样后台调度器才能正确识别这些规则已完成
+          try {
+            const config = await getConfig()
+            completedRules = config.reminderRules.filter((rule) => rule.enabled).map((rule) => rule.id)
+            console.log('Migrated sent=true to completedRules:', completedRules)
+          } catch (error) {
+            console.error('Failed to get config during migration, using empty completedRules:', error)
+            completedRules = []
+          }
+        } else {
+          // 如果旧版本未完成，completedRules 为空数组
+          completedRules = state.completedRules || []
+        }
+
+        const migratedState: DailyState = {
+          date: state.date,
+          completedRules,
+          lastRemindTime: state.lastRemindTime,
+          // 不再包含 sent 字段
+        }
+        // 保存迁移后的状态（删除 sent 字段）
+        await saveDailyState(migratedState)
+        return migratedState
+      }
+
+      // 确保 completedRules 存在
+      if (!state.completedRules) {
+        state.completedRules = []
+      }
+
+      return state
     }
     return DEFAULT_DAILY_STATE
   } catch (error) {
@@ -272,21 +343,75 @@ export async function saveDailyState(state: DailyState): Promise<void> {
 }
 
 /**
- * 标记今日已发送
+ * 标记今日已发送（旧版本，标记所有规则为已完成）
+ * @deprecated 使用 markRuleAsCompleted 代替
  */
 export async function markAsSent(): Promise<void> {
+  const config = await getConfig()
   const today = new Date().toISOString().split('T')[0]
   const now = new Date().toISOString()
+
+  // 获取所有启用的规则ID
+  const enabledRuleIds = config.reminderRules.filter((rule) => rule.enabled).map((rule) => rule.id)
 
   // 更新每日状态
   await saveDailyState({
     date: today,
-    sent: true,
+    completedRules: enabledRuleIds,
     lastRemindTime: now,
   })
 
   // 添加到历史记录
   await addHistoryRecord(today, true, now)
+}
+
+/**
+ * 标记特定规则为已完成
+ */
+export async function markRuleAsCompleted(ruleId: string): Promise<void> {
+  const today = new Date().toISOString().split('T')[0]
+  const now = new Date().toISOString()
+  const state = await getDailyState()
+
+  // 如果日期不是今天，重置状态
+  if (state.date !== today) {
+    state.date = today
+    state.completedRules = []
+  }
+
+  // 添加规则ID到已完成列表（避免重复）
+  if (!state.completedRules.includes(ruleId)) {
+    state.completedRules.push(ruleId)
+  }
+
+  state.lastRemindTime = now
+
+  await saveDailyState(state)
+
+  // 检查是否所有启用的规则都已完成
+  const config = await getConfig()
+  const enabledRuleIds = config.reminderRules.filter((rule) => rule.enabled).map((rule) => rule.id)
+  const allCompleted = enabledRuleIds.every((id) => state.completedRules.includes(id))
+
+  // 如果所有规则都已完成，添加到历史记录
+  if (allCompleted) {
+    await addHistoryRecord(today, true, now)
+  }
+}
+
+/**
+ * 检查规则是否已完成
+ */
+export async function isRuleCompleted(ruleId: string): Promise<boolean> {
+  const state = await getDailyState()
+  const today = new Date().toISOString().split('T')[0]
+
+  // 如果日期不是今天，返回 false
+  if (state.date !== today) {
+    return false
+  }
+
+  return state.completedRules.includes(ruleId)
 }
 
 /**
@@ -296,7 +421,7 @@ export async function resetDailyState(): Promise<void> {
   const today = new Date().toISOString().split('T')[0]
   await saveDailyState({
     date: today,
-    sent: false,
+    completedRules: [],
   })
 }
 

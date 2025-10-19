@@ -65,7 +65,7 @@ describe('Multi-Rule System Tests', () => {
   })
 
   describe('Next Reminder Time Calculation', () => {
-    const state: DailyState = { date: '', sent: false }
+    const state: DailyState = { date: '', completedRules: [] }
 
     test('should return first reminder time when before start time', () => {
       const rule = createTestRule({
@@ -116,7 +116,7 @@ describe('Multi-Rule System Tests', () => {
 
     test('should return null when already sent', () => {
       const rule = createTestRule()
-      const sentState: DailyState = { date: '', sent: true }
+      const sentState: DailyState = { date: '', completedRules: [rule.id] } // 使用rule的ID
 
       const now = new Date('2025-10-17T09:00:00')
       const nextTime = getNextReminderTime(now, rule, sentState)
@@ -149,7 +149,7 @@ describe('Multi-Rule System Tests', () => {
   })
 
   describe('Multiple Rules Scheduling', () => {
-    const state: DailyState = { date: '', sent: false }
+    const state: DailyState = { date: '', completedRules: [] }
 
     test('should find earliest reminder among multiple rules', () => {
       const rules: ReminderRule[] = [
@@ -267,7 +267,7 @@ describe('Multi-Rule System Tests', () => {
   })
 
   describe('Edge Cases', () => {
-    const state: DailyState = { date: '', sent: false }
+    const state: DailyState = { date: '', completedRules: [] }
 
     test('should handle rule with very short interval', () => {
       const rule = createTestRule({
@@ -331,7 +331,7 @@ describe('Multi-Rule System Tests', () => {
   })
 
   describe('Real-world Scenarios', () => {
-    const state: DailyState = { date: '', sent: false }
+    const state: DailyState = { date: '', completedRules: [] }
 
     test('Scenario: Work plan reminder (9-10am, every 15 min)', () => {
       const rule = createTestRule({

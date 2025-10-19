@@ -3,23 +3,36 @@ import { useTranslation } from 'react-i18next'
 import { Pencil1Icon, TrashIcon, PlusIcon } from '@radix-ui/react-icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import type { ReminderRule } from '@/types'
+import type { ReminderRule, TimeFormat } from '@/types'
+import { formatTimeString } from '@/utils/time'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import RuleEditorDialog from '@/components/RuleEditorDialog'
 
 interface ReminderRulesManagerProps {
   rules: ReminderRule[]
   onChange: (rules: ReminderRule[]) => void
   onSave?: (rules: ReminderRule[]) => Promise<void> // 新增：保存回调，传入最新的规则
+  timeFormat: TimeFormat
 }
 
-const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onChange, onSave }) => {
+const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onChange, onSave, timeFormat }) => {
   const { t } = useTranslation()
   const [editingRule, setEditingRule] = useState<ReminderRule | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set()) // 跟踪展开的规则
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false)
+  const [ruleToDelete, setRuleToDelete] = useState<string | null>(null)
 
   const toggleRuleExpand = (ruleId: string) => {
     const newExpanded = new Set(expandedRules)
@@ -43,20 +56,28 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
 
   const handleDeleteRule = async (ruleId: string) => {
     if (rules.length === 1) {
-      alert(t('options.rules.deleteLastError', 'You must keep at least one reminder rule'))
+      setErrorDialogOpen(true)
       return
     }
-    if (confirm(t('options.rules.deleteConfirm', 'Are you sure you want to delete this rule?'))) {
-      const updatedRules = rules.filter((r) => r.id !== ruleId)
-      onChange(updatedRules)
+    setRuleToDelete(ruleId)
+    setDeleteDialogOpen(true)
+  }
 
-      // 自动保存到 storage
-      if (onSave) {
-        setTimeout(async () => {
-          await onSave(updatedRules)
-        }, 0)
-      }
+  const confirmDeleteRule = async () => {
+    if (!ruleToDelete) return
+
+    const updatedRules = rules.filter((r) => r.id !== ruleToDelete)
+    onChange(updatedRules)
+
+    // 自动保存到 storage
+    if (onSave) {
+      setTimeout(async () => {
+        await onSave(updatedRules)
+      }, 0)
     }
+
+    setDeleteDialogOpen(false)
+    setRuleToDelete(null)
   }
 
   const handleSaveRule = async (rule: ReminderRule) => {
@@ -108,9 +129,19 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
     return selectedDays.join(', ')
   }
 
+  // Sort rules by start time (earliest first)
+  const sortedRules = [...rules].sort((a, b) => {
+    // Convert "HH:mm" to minutes for comparison
+    const timeToMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(':').map(Number)
+      return hours * 60 + minutes
+    }
+    return timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+  })
+
   return (
     <div className="space-y-4">
-      {rules.length === 0 ? (
+      {sortedRules.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-slate-500">
             {t('options.rules.noRules', 'No reminder rules yet')}
@@ -118,7 +149,7 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
         </Card>
       ) : (
         <>
-          {rules.map((rule) => (
+          {sortedRules.map((rule) => (
             <Card key={rule.id} className="overflow-hidden">
               <CardContent className="p-6">
                 {/* Header */}
@@ -131,8 +162,8 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-slate-900">{rule.name}</h3>
                       <p className="text-sm text-slate-500 mt-1">
-                        {rule.startTime} - {rule.deadline} · {t('options.rules.interval', 'Every')} {rule.interval}{' '}
-                        {t('options.rules.minutes', 'min')}
+                        {formatTimeString(rule.startTime, timeFormat)} - {formatTimeString(rule.deadline, timeFormat)} ·{' '}
+                        {t('options.rules.interval', 'Every')} {rule.interval} {t('options.rules.minutes', 'min')}
                       </p>
                     </div>
                   </div>
@@ -284,6 +315,48 @@ const ReminderRulesManager: React.FC<ReminderRulesManagerProps> = ({ rules, onCh
       </Button>
 
       <RuleEditorDialog rule={editingRule} open={dialogOpen} onOpenChange={setDialogOpen} onSave={handleSaveRule} />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('options.rules.deleteConfirmTitle', '扩展程序日常提醒助手提示：')}</DialogTitle>
+            <DialogDescription>
+              {t('options.rules.deleteConfirm', 'Are you sure you want to delete this rule?')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              className="min-w-[100px]"
+            >
+              {t('options.rules.cancel', '取消')}
+            </Button>
+            <Button type="button" onClick={confirmDeleteRule} className="min-w-[100px]">
+              {t('options.rules.confirmDelete', '确定')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Dialog */}
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('options.rules.errorTitle', '扩展程序日常提醒助手提示：')}</DialogTitle>
+            <DialogDescription>
+              {t('options.rules.deleteLastError', 'You must keep at least one reminder rule')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setErrorDialogOpen(false)} className="min-w-[100px]">
+              {t('options.rules.ok', '确定')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

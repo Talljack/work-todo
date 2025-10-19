@@ -1,7 +1,13 @@
 /**
  * 后台消息类型
  */
-export type BackgroundMessageType = 'REINIT_ALARMS' | 'GET_STATE' | 'MARK_SENT' | 'OPEN_OPTIONS'
+export type BackgroundMessageType =
+  | 'REINIT_ALARMS'
+  | 'GET_STATE'
+  | 'MARK_SENT'
+  | 'MARK_RULE_COMPLETED'
+  | 'OPEN_OPTIONS'
+  | 'TEST_TOAST'
 
 /**
  * 后台消息

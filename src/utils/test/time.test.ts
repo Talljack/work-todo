@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   parseTime,
   formatTime,
+  formatTimeString,
   isWorkDay,
   shouldResetState,
   getCurrentMinutes,
@@ -21,12 +22,28 @@ describe('Time Utils', () => {
   })
 
   describe('formatTime', () => {
-    test('should format date to HH:mm', () => {
+    test('should format date to HH:mm by default', () => {
       const date = new Date('2025-10-16T09:30:00')
       expect(formatTime(date)).toBe('09:30')
 
       const date2 = new Date('2025-10-16T23:05:00')
       expect(formatTime(date2)).toBe('23:05')
+    })
+
+    test('should format date to 12-hour when requested', () => {
+      const date = new Date('2025-10-16T09:30:00')
+      expect(formatTime(date, '12h')).toBe('9:30 AM')
+
+      const date2 = new Date('2025-10-16T23:05:00')
+      expect(formatTime(date2, '12h')).toBe('11:05 PM')
+    })
+  })
+
+  describe('formatTimeString', () => {
+    test('should format time string using provided format', () => {
+      expect(formatTimeString('09:15', '24h')).toBe('09:15')
+      expect(formatTimeString('09:15', '12h')).toBe('9:15 AM')
+      expect(formatTimeString('23:45', '12h')).toBe('11:45 PM')
     })
   })
 
@@ -119,7 +136,7 @@ describe('Time Utils', () => {
       toastClickUrl: '',
     }
 
-    const state: DailyState = { date: '', sent: false }
+    const state: DailyState = { date: '', completedRules: [] }
 
     test('should return current time when exactly at start time', () => {
       const now = new Date('2025-10-17T09:00:00') // Friday 09:00
@@ -159,7 +176,7 @@ describe('Time Utils', () => {
 
     test('should return null when already sent', () => {
       const now = new Date('2025-10-17T09:00:00')
-      const sentState: DailyState = { date: '', sent: true }
+      const sentState: DailyState = { date: '', completedRules: ['test-rule'] } // 包含rule ID表示已完成
       const result = getNextReminderTime(now, rule, sentState)
 
       expect(result).toBeNull()
