@@ -387,17 +387,23 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
           const allCompleted =
             enabledRules.length > 0 && enabledRules.every((rule) => state.completedRules.includes(rule.id))
 
+          console.log(`Rule ${ruleId} marked as completed. All completed: ${allCompleted}`)
+
           if (allCompleted) {
-            // 清除 Badge
+            // 所有规则都完成了，清除 Badge
             await browser.action.setBadgeText({ text: '' })
             // 清除今日所有提醒闹钟
             await browser.alarms.clear(ALARM_NAMES.REMINDER)
+            console.log('All rules completed, badge cleared')
           } else {
+            // 还有未完成的规则，保持 Badge 显示
+            await browser.action.setBadgeText({ text: '!' })
+            await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
             // 重新安排下一次提醒（因为某些规则可能已完成）
             await scheduleNextReminder()
+            console.log('Some rules still pending, badge maintained')
           }
 
-          console.log(`Rule ${ruleId} marked as completed`)
           return { success: true }
         }
 
