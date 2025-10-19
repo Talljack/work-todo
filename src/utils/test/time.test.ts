@@ -176,7 +176,7 @@ describe('Time Utils', () => {
 
     test('should return null when already sent', () => {
       const now = new Date('2025-10-17T09:00:00')
-      const sentState: DailyState = { date: '', completedRules: [] }
+      const sentState: DailyState = { date: '', completedRules: ['test-rule'] } // 包含rule ID表示已完成
       const result = getNextReminderTime(now, rule, sentState)
 
       expect(result).toBeNull()

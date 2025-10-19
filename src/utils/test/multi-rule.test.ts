@@ -116,7 +116,7 @@ describe('Multi-Rule System Tests', () => {
 
     test('should return null when already sent', () => {
       const rule = createTestRule()
-      const sentState: DailyState = { date: '', completedRules: [] }
+      const sentState: DailyState = { date: '', completedRules: [rule.id] } // 使用rule的ID
 
       const now = new Date('2025-10-17T09:00:00')
       const nextTime = getNextReminderTime(now, rule, sentState)

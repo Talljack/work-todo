@@ -198,7 +198,10 @@ describe('Popup Display Logic - Multi-Rule Scenarios', () => {
     })
 
     test('Should handle already sent state', () => {
-      const sentState: DailyState = { date: '2025-10-20', completedRules: [] }
+      const sentState: DailyState = {
+        date: '2025-10-20',
+        completedRules: ['daily-routine', 'sleep'], // 包含两个rule的ID
+      }
       const now = new Date('2025-10-20T11:00:00')
 
       const nextTimeDailyRoutine = getNextReminderTime(now, dailyRoutineRule, sentState)
