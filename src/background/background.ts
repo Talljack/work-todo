@@ -284,13 +284,16 @@ async function handleReminder(): Promise<void> {
     }
   }
 
-  // 3. 更新 Badge（如果还有未完成的规则）
-  const hasIncomplete = enabledRules.some((rule) => !state.completedRules.includes(rule.id))
-  if (hasIncomplete) {
+  // 3. 更新 Badge（只在触发提醒时显示，而不是只要有未完成的就显示）
+  if (rulesToRemind.length > 0) {
+    // 当前有 rule 正在提醒，显示 badge
     await browser.action.setBadgeText({ text: '!' })
     await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
+    console.log(`Badge set for ${rulesToRemind.length} active rule(s)`)
   } else {
+    // 当前没有 rule 需要提醒，不显示 badge
     await browser.action.setBadgeText({ text: '' })
+    console.log('No active reminders, badge cleared')
   }
 
   // 4. 安排下一次提醒
@@ -380,29 +383,14 @@ browser.runtime.onMessage.addListener((message: unknown): Promise<BackgroundResp
           }
           await markRuleAsCompleted(ruleId)
 
-          // 检查是否所有规则都已完成
-          const config = await getConfig()
-          const state = await getDailyState()
-          const enabledRules = config.reminderRules.filter((rule) => rule.enabled)
-          const allCompleted =
-            enabledRules.length > 0 && enabledRules.every((rule) => state.completedRules.includes(rule.id))
+          console.log(`Rule ${ruleId} marked as completed`)
 
-          console.log(`Rule ${ruleId} marked as completed. All completed: ${allCompleted}`)
+          // 立即清除当前 Badge（因为当前活跃的 rule 已完成）
+          await browser.action.setBadgeText({ text: '' })
+          console.log('Badge cleared for completed rule')
 
-          if (allCompleted) {
-            // 所有规则都完成了，清除 Badge
-            await browser.action.setBadgeText({ text: '' })
-            // 清除今日所有提醒闹钟
-            await browser.alarms.clear(ALARM_NAMES.REMINDER)
-            console.log('All rules completed, badge cleared')
-          } else {
-            // 还有未完成的规则，保持 Badge 显示
-            await browser.action.setBadgeText({ text: '!' })
-            await browser.action.setBadgeBackgroundColor({ color: '#EF4444' })
-            // 重新安排下一次提醒（因为某些规则可能已完成）
-            await scheduleNextReminder()
-            console.log('Some rules still pending, badge maintained')
-          }
+          // 重新安排下一次提醒（切换到下一条未完成的 rule）
+          await scheduleNextReminder()
 
           return { success: true }
         }
