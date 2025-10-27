@@ -66,22 +66,21 @@ const RuleEditorDialog: React.FC<RuleEditorDialogProps> = ({ rule, open, onOpenC
 
       const lateMinutes = parseTime(lateTime)
 
-      // 如果是跨午夜的规则（deadline < startTime）
+      // 如果是跨午夜的规则（deadline < startTime，如 11:30 -> 00:00）
       if (deadlineMinutes < startMinutes) {
-        // Late reminder 可以在午夜之后（小于 deadline）或者在午夜之前（大于 startTime 之后的某个时间）
-        // 这种情况下，late reminder 应该在 deadline 之后
-        // 如果 lateMinutes > deadline 且 lateMinutes < startTime，说明在有效范围内
-        if (lateMinutes <= deadlineMinutes && lateMinutes < startMinutes) {
-          continue // 这是有效的
-        } else if (lateMinutes > deadlineMinutes && lateMinutes < startMinutes) {
+        // Late reminder 应该在 deadline 之后（第二天）
+        // 对于跨午夜规则，Late Reminder 只要不等于 deadline 即可
+        // 因为无法通过时间值判断是第一天还是第二天，我们假设用户设置的都是第二天
+        if (lateMinutes === deadlineMinutes) {
           setErrorMessage(
             t(
               'options.rules.error.lateReminderInvalid',
-              `迟到提醒时间 ${lateTime} 必须在截止时间 ${editingRule.deadline} 之后`,
+              `迟到提醒时间 ${lateTime} 不能等于截止时间 ${editingRule.deadline}`,
             ),
           )
           return false
         }
+        // 其他时间都是有效的
       } else {
         // 非跨午夜的情况，late reminder 必须 > deadline
         if (lateMinutes <= deadlineMinutes) {

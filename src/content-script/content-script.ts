@@ -2,9 +2,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import toast, { Toaster } from 'react-hot-toast'
 import browser from 'webextension-polyfill'
+import { soundManager, SoundManager } from '@/utils/soundManager'
+import type { SoundStyle } from '@/types/config.types'
 
 /**
- * Content Script - 用于在页面上显示 Toast 提醒
+ * Content Script - 用于在页面上显示 Toast 提醒和播放声音
  */
 
 // 创建 Toast 容器
@@ -37,10 +39,31 @@ function initToastContainer() {
 
 // 监听来自后台的消息
 browser.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  const msg = message as { type: string; message?: string; duration?: number; url?: string; backgroundColor?: string }
+  const msg = message as {
+    type: string
+    message?: string
+    duration?: number
+    url?: string
+    backgroundColor?: string
+    soundEnabled?: boolean
+    soundStyle?: SoundStyle
+    reminderCount?: number
+  }
 
   if (msg.type === 'SHOW_TOAST') {
     initToastContainer()
+
+    // 播放声音（如果启用）
+    if (msg.soundEnabled !== false) {
+      const soundStyle = msg.soundStyle || 'professional'
+      const reminderCount = msg.reminderCount || 0
+      const urgency = SoundManager.getUrgencyByReminderCount(reminderCount)
+
+      soundManager.play(soundStyle, urgency).catch((error) => {
+        console.log('Failed to play sound:', error)
+        // 声音播放失败不影响主流程
+      })
+    }
 
     // 获取持续时间（默认 30 秒）
     const duration = msg.duration || 30000

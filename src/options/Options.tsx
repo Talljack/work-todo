@@ -22,8 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import Statistics from '@/components/Statistics'
 import ReminderRulesManager from '@/components/ReminderRulesManager'
+import ReminderStyleSettings from '@/components/ReminderStyleSettings'
 
-type NavigationSection = 'general' | 'rules' | 'template' | 'statistics'
+type NavigationSection = 'general' | 'rules' | 'styles' | 'template' | 'statistics'
 
 const Options: React.FC = () => {
   const { t, i18n } = useTranslation()
@@ -206,6 +207,7 @@ const Options: React.FC = () => {
   const navItems: { id: NavigationSection; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('options.nav.general', 'General'), icon: <GearIcon className="h-4 w-4" /> },
     { id: 'rules', label: t('options.nav.rules', 'Reminder Rules'), icon: <RocketIcon className="h-4 w-4" /> },
+    { id: 'styles', label: t('options.nav.styles', 'Reminder Styles'), icon: <RocketIcon className="h-4 w-4" /> },
     { id: 'template', label: t('options.nav.template', 'Template'), icon: <CheckCircledIcon className="h-4 w-4" /> },
     {
       id: 'statistics',
@@ -447,6 +449,30 @@ const Options: React.FC = () => {
                   await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
                 }}
                 timeFormat={config.timeFormat}
+              />
+            </div>
+          )}
+
+          {/* Reminder Styles Section */}
+          {activeSection === 'styles' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.styles', 'Reminder Styles')}</h2>
+                <p className="text-sm text-slate-500">
+                  {t(
+                    'options.styles.description',
+                    'Customize the sound and message style of your reminders to make them more engaging',
+                  )}
+                </p>
+              </div>
+
+              <ReminderStyleSettings
+                config={config}
+                onConfigChange={async (newConfig) => {
+                  updateConfig(newConfig)
+                  await saveConfig(newConfig)
+                  await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+                }}
               />
             </div>
           )}
