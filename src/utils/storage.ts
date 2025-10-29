@@ -26,8 +26,8 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
   const ensureTimeFormat = (format?: AppConfig['timeFormat']): AppConfig['timeFormat'] =>
     format === '12h' ? '12h' : '24h'
 
-  // 如果已经是最新版本（v6），直接返回
-  if (oldConfig.version && oldConfig.version >= 6 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+  // 如果已经是最新版本（v8），直接返回
+  if (oldConfig.version && oldConfig.version >= 8 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
     return {
       ...DEFAULT_CONFIG,
       ...oldConfig,
@@ -35,26 +35,65 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     } as AppConfig
   }
 
-  if (oldConfig.version === 5 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
-    console.log('[migrateConfig] Migrating from v5 to v6')
+  // v7 -> v8: 将声音和智能文案功能默认改为关闭
+  if (oldConfig.version === 7 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+    console.log('[migrateConfig] Migrating from v7 to v8 - disabling sound and smart message by default')
 
     const newConfig: AppConfig = {
       ...oldConfig,
-      version: 6,
+      version: 8,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+      // 如果用户之前启用了这些功能，保留用户的选择；否则使用新的默认值（关闭）
+      soundEnabled: oldConfig.soundEnabled === true ? true : false,
+      smartMessageEnabled: oldConfig.smartMessageEnabled === true ? true : false,
+    } as AppConfig
+
+    return newConfig
+  }
+
+  // v6 -> v8: 添加声音和智能文案配置（默认关闭）
+  if (oldConfig.version === 6 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+    console.log('[migrateConfig] Migrating from v6 to v8')
+
+    const newConfig: AppConfig = {
+      ...oldConfig,
+      version: 8,
+      timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+      soundStyle: oldConfig.soundStyle || DEFAULT_CONFIG.soundStyle,
+      soundVolume: oldConfig.soundVolume || DEFAULT_CONFIG.soundVolume,
+      soundEnabled: false, // 新功能默认关闭
+      messageStyle: oldConfig.messageStyle || DEFAULT_CONFIG.messageStyle,
+      smartMessageEnabled: false, // 新功能默认关闭
+    } as AppConfig
+
+    return newConfig
+  }
+
+  if (oldConfig.version === 5 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
+    console.log('[migrateConfig] Migrating from v5 to v8')
+
+    const newConfig: AppConfig = {
+      ...oldConfig,
+      version: 8,
       timeFormat: ensureTimeFormat(oldConfig.timeFormat),
       reminderRules: oldConfig.reminderRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
+      soundStyle: DEFAULT_CONFIG.soundStyle,
+      soundVolume: DEFAULT_CONFIG.soundVolume,
+      soundEnabled: false,
+      messageStyle: DEFAULT_CONFIG.messageStyle,
+      smartMessageEnabled: false,
     } as AppConfig
 
     return newConfig
   }
 
-  // v4 -> v6: 为每个规则添加 templateContent 字段（如果没有的话）
+  // v4 -> v8: 为每个规则添加 templateContent 字段（如果没有的话）
   if (oldConfig.version === 4 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
-    console.log('[migrateConfig] Migrating from v4 to v5')
+    console.log('[migrateConfig] Migrating from v4 to v8')
 
     const migratedRules = oldConfig.reminderRules.map((rule) => {
       return {
@@ -66,22 +105,28 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     })
 
     const newConfig: AppConfig = {
-      version: 6,
+      version: 8,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
       timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+      soundStyle: DEFAULT_CONFIG.soundStyle,
+      soundVolume: DEFAULT_CONFIG.soundVolume,
+      soundEnabled: false,
+      messageStyle: DEFAULT_CONFIG.messageStyle,
+      smartMessageEnabled: false,
+      toastBackgroundColor: oldConfig.toastBackgroundColor || DEFAULT_CONFIG.toastBackgroundColor,
     }
 
-    console.log('[migrateConfig] v4 -> v6 migration complete', newConfig)
+    console.log('[migrateConfig] v4 -> v8 migration complete', newConfig)
     return newConfig
   }
 
-  // v3 -> v6: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
+  // v3 -> v8: 将 quickLinks 转换为 toastClickUrl（取第一个链接的 URL）
   if (oldConfig.version === 3 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
-    console.log('[migrateConfig] Migrating from v3 to v5')
+    console.log('[migrateConfig] Migrating from v3 to v8')
 
     const migratedRules = oldConfig.reminderRules.map((rule) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,22 +143,28 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     })
 
     const newConfig: AppConfig = {
-      version: 6,
+      version: 8,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
       timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+      soundStyle: DEFAULT_CONFIG.soundStyle,
+      soundVolume: DEFAULT_CONFIG.soundVolume,
+      soundEnabled: false,
+      messageStyle: DEFAULT_CONFIG.messageStyle,
+      smartMessageEnabled: false,
+      toastBackgroundColor: oldConfig.toastBackgroundColor || DEFAULT_CONFIG.toastBackgroundColor,
     }
 
-    console.log('[migrateConfig] v3 -> v6 migration complete', newConfig)
+    console.log('[migrateConfig] v3 -> v8 migration complete', newConfig)
     return newConfig
   }
 
-  // v2 -> v6: 将 template.quickLinks 迁移到 toastClickUrl
+  // v2 -> v8: 将 template.quickLinks 迁移到 toastClickUrl
   if (oldConfig.version === 2 && oldConfig.reminderRules && oldConfig.reminderRules.length > 0) {
-    console.log('[migrateConfig] Migrating from v2 to v5')
+    console.log('[migrateConfig] Migrating from v2 to v8')
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalQuickLinks = (oldConfig.template as any)?.quickLinks || []
@@ -128,18 +179,24 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
     })
 
     return {
-      version: 6,
+      version: 8,
       reminderRules: migratedRules,
       template: {
         content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
       },
       timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
       timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+      soundStyle: DEFAULT_CONFIG.soundStyle,
+      soundVolume: DEFAULT_CONFIG.soundVolume,
+      soundEnabled: false,
+      messageStyle: DEFAULT_CONFIG.messageStyle,
+      smartMessageEnabled: false,
+      toastBackgroundColor: oldConfig.toastBackgroundColor || DEFAULT_CONFIG.toastBackgroundColor,
     }
   }
 
-  // v1 -> v6: 将旧的 workDays 配置转换为一个 ReminderRule
-  console.log('[migrateConfig] Migrating from v1 to v6')
+  // v1 -> v8: 将旧的 workDays 配置转换为一个 ReminderRule
+  console.log('[migrateConfig] Migrating from v1 to v8')
 
   const reminderRules: ReminderRule[] = []
 
@@ -174,13 +231,19 @@ function migrateConfig(oldConfig: Partial<AppConfig>): AppConfig {
   }
 
   const newConfig: AppConfig = {
-    version: 6,
+    version: 8,
     reminderRules,
     template: {
       content: oldConfig.template?.content || DEFAULT_CONFIG.template.content,
     },
     timezone: oldConfig.timezone || DEFAULT_CONFIG.timezone,
     timeFormat: ensureTimeFormat(oldConfig.timeFormat),
+    soundStyle: DEFAULT_CONFIG.soundStyle,
+    soundVolume: DEFAULT_CONFIG.soundVolume,
+    soundEnabled: false,
+    messageStyle: DEFAULT_CONFIG.messageStyle,
+    smartMessageEnabled: false,
+    toastBackgroundColor: oldConfig.toastBackgroundColor || DEFAULT_CONFIG.toastBackgroundColor,
   }
 
   console.log('[migrateConfig] Migration complete', newConfig)

@@ -320,7 +320,7 @@ export const createPresetReminderRules = (lang?: string): ReminderRule[] => {
  * 默认配置
  */
 export const DEFAULT_CONFIG: AppConfig = {
-  version: 7, // 版本 7: 新增声音和文案风格配置
+  version: 8, // 版本 8: 将声音和智能文案功能默认改为关闭
   reminderRules: createPresetReminderRules(),
   template: {
     content: getDefaultTemplateContent(),
@@ -330,7 +330,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   toastBackgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   soundStyle: 'professional',
   soundVolume: 70,
-  soundEnabled: true,
+  soundEnabled: false,
   messageStyle: 'professional',
-  smartMessageEnabled: true,
+  smartMessageEnabled: false,
 }
