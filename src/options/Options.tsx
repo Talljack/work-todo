@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Toaster } from 'react-hot-toast'
 import {
   CheckCircledIcon,
   DownloadIcon,
@@ -22,8 +23,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import Statistics from '@/components/Statistics'
 import ReminderRulesManager from '@/components/ReminderRulesManager'
+import ReminderStyleSettings from '@/components/ReminderStyleSettings'
 
-type NavigationSection = 'general' | 'rules' | 'template' | 'statistics'
+type NavigationSection = 'general' | 'rules' | 'styles' | 'template' | 'statistics'
 
 const Options: React.FC = () => {
   const { t, i18n } = useTranslation()
@@ -206,6 +208,7 @@ const Options: React.FC = () => {
   const navItems: { id: NavigationSection; label: string; icon: React.ReactNode }[] = [
     { id: 'general', label: t('options.nav.general', 'General'), icon: <GearIcon className="h-4 w-4" /> },
     { id: 'rules', label: t('options.nav.rules', 'Reminder Rules'), icon: <RocketIcon className="h-4 w-4" /> },
+    { id: 'styles', label: t('options.nav.styles', 'Reminder Styles'), icon: <RocketIcon className="h-4 w-4" /> },
     { id: 'template', label: t('options.nav.template', 'Template'), icon: <CheckCircledIcon className="h-4 w-4" /> },
     {
       id: 'statistics',
@@ -215,296 +218,323 @@ const Options: React.FC = () => {
   ]
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* 左侧导航栏 */}
-      <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
-        <div className="sticky top-0 p-6">
-          <div className="mb-8">
-            <h1 className="text-xl font-bold text-slate-900">Routine Reminder</h1>
-            <p className="text-sm text-slate-500">Reminder Settings</p>
-          </div>
+    <>
+      <Toaster position="top-right" />
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        {/* 左侧导航栏 */}
+        <aside className="w-64 border-r border-slate-200 bg-white shadow-sm">
+          <div className="sticky top-0 p-6">
+            <div className="mb-8">
+              <h1 className="text-xl font-bold text-slate-900">Routine Reminder</h1>
+              <p className="text-sm text-slate-500">Reminder Settings</p>
+            </div>
 
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  activeSection === item.id
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
+            <nav className="space-y-1">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    activeSection === item.id
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+
+            <div className="mt-8 space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="w-full justify-start gap-2"
               >
-                {item.icon}
-                {item.label}
-              </button>
-            ))}
-          </nav>
+                <DownloadIcon className="h-4 w-4" />
+                {t('options.other.export')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleImport}
+                className="w-full justify-start gap-2"
+              >
+                <UploadIcon className="h-4 w-4" />
+                {t('options.other.import')}
+              </Button>
+            </div>
 
-          <div className="mt-8 space-y-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="w-full justify-start gap-2"
-            >
-              <DownloadIcon className="h-4 w-4" />
-              {t('options.other.export')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleImport}
-              className="w-full justify-start gap-2"
-            >
-              <UploadIcon className="h-4 w-4" />
-              {t('options.other.import')}
-            </Button>
+            {/* 版本号 */}
+            <div className="mt-auto pt-8 border-t border-slate-200">
+              <p className="text-xs text-slate-400 text-center">v{version}</p>
+            </div>
           </div>
+        </aside>
 
-          {/* 版本号 */}
-          <div className="mt-auto pt-8 border-t border-slate-200">
-            <p className="text-xs text-slate-400 text-center">v{version}</p>
+        {/* 右侧内容区 */}
+        <main className="flex-1 overflow-auto">
+          {/* 右上角操作按钮 */}
+          <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200">
+            <div className="mx-auto max-w-4xl px-8 py-4 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClearCache}
+                className="gap-2 text-slate-600 hover:text-slate-900"
+              >
+                <TrashIcon className="h-4 w-4" />
+                {t('options.clearCache.button', 'Clear Cache')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetSettings}
+                className="gap-2 text-slate-600 hover:text-red-600"
+              >
+                <ResetIcon className="h-4 w-4" />
+                {t('options.reset.button', 'Reset')}
+              </Button>
+            </div>
           </div>
-        </div>
-      </aside>
+          <div className="mx-auto max-w-4xl p-8">
+            {/* General Section */}
+            {activeSection === 'general' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.general', 'General')}</h2>
+                  <p className="text-sm text-slate-500">
+                    {t('options.general.description', 'Configure general settings')}
+                  </p>
+                </div>
 
-      {/* 右侧内容区 */}
-      <main className="flex-1 overflow-auto">
-        {/* 右上角操作按钮 */}
-        <div className="sticky top-0 z-10 bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200">
-          <div className="mx-auto max-w-4xl px-8 py-4 flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleClearCache}
-              className="gap-2 text-slate-600 hover:text-slate-900"
-            >
-              <TrashIcon className="h-4 w-4" />
-              {t('options.clearCache.button', 'Clear Cache')}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleResetSettings}
-              className="gap-2 text-slate-600 hover:text-red-600"
-            >
-              <ResetIcon className="h-4 w-4" />
-              {t('options.reset.button', 'Reset')}
-            </Button>
-          </div>
-        </div>
-        <div className="mx-auto max-w-4xl p-8">
-          {/* General Section */}
-          {activeSection === 'general' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.general', 'General')}</h2>
-                <p className="text-sm text-slate-500">
-                  {t('options.general.description', 'Configure general settings')}
-                </p>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('options.other.language')}</CardTitle>
-                  <CardDescription>{t('options.other.languageHint')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select
-                    value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
-                    onValueChange={(value) => handleLanguageChange(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="zh">中文 (Chinese)</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">{t('options.other.timezone')}</Label>
-                    <Input id="timezone" type="text" value={config.timezone} disabled />
-                    <p className="text-xs text-slate-500">{t('options.other.timezoneHint')}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="time-format">{t('options.other.timeFormat')}</Label>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('options.other.language')}</CardTitle>
+                    <CardDescription>{t('options.other.languageHint')}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <Select
-                      value={config.timeFormat}
-                      onValueChange={(value) => handleTimeFormatChange(value as TimeFormat)}
+                      value={i18n.language.startsWith('zh') ? 'zh' : 'en'}
+                      onValueChange={(value) => handleLanguageChange(value)}
                     >
-                      <SelectTrigger id="time-format">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="24h">{t('options.other.timeFormat24', '24-hour')}</SelectItem>
-                        <SelectItem value="12h">{t('options.other.timeFormat12', '12-hour')}</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="zh">中文 (Chinese)</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-slate-500">{t('options.other.timeFormatHint')}</p>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="toast-color">
-                      {t('options.other.toastBackgroundColor', 'Toast Background Color')}
-                    </Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[
-                        {
-                          name: t('options.other.toastColor.purple', 'Purple'),
-                          value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.blue', 'Blue'),
-                          value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.green', 'Green'),
-                          value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.orange', 'Orange'),
-                          value: 'linear-gradient(135deg, #f46b45 0%, #eea849 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.pink', 'Pink'),
-                          value: 'linear-gradient(135deg, #ee0979 0%, #ff6a00 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.teal', 'Teal'),
-                          value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.red', 'Red'),
-                          value: 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
-                        },
-                        {
-                          name: t('options.other.toastColor.dark', 'Dark'),
-                          value: 'linear-gradient(135deg, #434343 0%, #000000 100%)',
-                        },
-                      ].map((color) => (
-                        <button
-                          key={color.value}
-                          type="button"
-                          onClick={async () => {
-                            const newConfig = {
-                              ...configRef.current,
-                              toastBackgroundColor: color.value,
-                            }
-                            updateConfig(newConfig)
-                            await saveConfig(newConfig)
-                          }}
-                          className={`h-12 rounded-lg border-2 transition-all ${
-                            config.toastBackgroundColor === color.value
-                              ? 'border-primary-500 ring-2 ring-primary-200'
-                              : 'border-slate-200 hover:border-slate-300'
-                          }`}
-                          style={{ background: color.value }}
-                          title={color.name}
-                        />
-                      ))}
+                    <div className="space-y-2">
+                      <Label htmlFor="timezone">{t('options.other.timezone')}</Label>
+                      <Input id="timezone" type="text" value={config.timezone} disabled />
+                      <p className="text-xs text-slate-500">{t('options.other.timezoneHint')}</p>
                     </div>
-                    <p className="text-xs text-slate-500">
-                      {t(
-                        'options.other.toastBackgroundColorHint',
-                        'Select the background color for toast notifications',
-                      )}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
 
-          {/* Reminder Rules Section */}
-          {activeSection === 'rules' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.rules', 'Reminder Rules')}</h2>
-                <p className="text-sm text-slate-500">
-                  {t(
-                    'options.rules.description',
-                    'Manage your reminder rules. You can create multiple rules for different purposes.',
-                  )}
-                </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="time-format">{t('options.other.timeFormat')}</Label>
+                      <Select
+                        value={config.timeFormat}
+                        onValueChange={(value) => handleTimeFormatChange(value as TimeFormat)}
+                      >
+                        <SelectTrigger id="time-format">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="24h">{t('options.other.timeFormat24', '24-hour')}</SelectItem>
+                          <SelectItem value="12h">{t('options.other.timeFormat12', '12-hour')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-slate-500">{t('options.other.timeFormatHint')}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="toast-color">
+                        {t('options.other.toastBackgroundColor', 'Toast Background Color')}
+                      </Label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          {
+                            name: t('options.other.toastColor.purple', 'Purple'),
+                            value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.blue', 'Blue'),
+                            value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.green', 'Green'),
+                            value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.orange', 'Orange'),
+                            value: 'linear-gradient(135deg, #f46b45 0%, #eea849 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.pink', 'Pink'),
+                            value: 'linear-gradient(135deg, #ee0979 0%, #ff6a00 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.teal', 'Teal'),
+                            value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.red', 'Red'),
+                            value: 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
+                          },
+                          {
+                            name: t('options.other.toastColor.dark', 'Dark'),
+                            value: 'linear-gradient(135deg, #434343 0%, #000000 100%)',
+                          },
+                        ].map((color) => (
+                          <button
+                            key={color.value}
+                            type="button"
+                            onClick={async () => {
+                              const newConfig = {
+                                ...configRef.current,
+                                toastBackgroundColor: color.value,
+                              }
+                              updateConfig(newConfig)
+                              await saveConfig(newConfig)
+                            }}
+                            className={`h-12 rounded-lg border-2 transition-all ${
+                              config.toastBackgroundColor === color.value
+                                ? 'border-primary-500 ring-2 ring-primary-200'
+                                : 'border-slate-200 hover:border-slate-300'
+                            }`}
+                            style={{ background: color.value }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        {t(
+                          'options.other.toastBackgroundColorHint',
+                          'Select the background color for toast notifications',
+                        )}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+            )}
 
-              <ReminderRulesManager
-                rules={config.reminderRules}
-                onChange={(rules) => updateConfig({ ...configRef.current, reminderRules: rules })}
-                onSave={async (updatedRules) => {
-                  // 自动保存规则变更到 storage
-                  const newConfig = { ...configRef.current, reminderRules: updatedRules }
-                  await saveConfig(newConfig)
-                  // 通知后台重新初始化
-                  await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
-                }}
-                timeFormat={config.timeFormat}
-              />
-            </div>
-          )}
-
-          {/* Template Section */}
-          {activeSection === 'template' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+            {/* Reminder Rules Section */}
+            {activeSection === 'rules' && (
+              <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">{t('options.template.title')}</h2>
-                  <p className="text-sm text-slate-500">{t('options.template.hint')}</p>
+                  <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.rules', 'Reminder Rules')}</h2>
+                  <p className="text-sm text-slate-500">
+                    {t(
+                      'options.rules.description',
+                      'Manage your reminder rules. You can create multiple rules for different purposes.',
+                    )}
+                  </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleResetTemplate()}
-                  className="gap-2"
-                >
-                  <ReloadIcon className="h-4 w-4" />
-                  {t('options.template.reset')}
-                </Button>
-              </div>
 
-              <Card>
-                <CardContent className="pt-6 space-y-2">
-                  <Label htmlFor="template-content">{t('options.template.content')}</Label>
-                  <Textarea
-                    id="template-content"
-                    value={config.template.content}
-                    onChange={(e) =>
-                      updateConfig({
-                        ...configRef.current,
-                        template: { ...configRef.current.template, content: e.target.value },
-                      })
-                    }
-                    rows={12}
-                    className="font-mono text-sm"
-                    placeholder={t('options.template.placeholder')}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Statistics Section */}
-          {activeSection === 'statistics' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">{t('options.tabs.statistics', 'Statistics')}</h2>
-                <p className="text-sm text-slate-500">Track your completion rate and streaks</p>
+                <ReminderRulesManager
+                  rules={config.reminderRules}
+                  onChange={(rules) => updateConfig({ ...configRef.current, reminderRules: rules })}
+                  onSave={async (updatedRules) => {
+                    // 自动保存规则变更到 storage
+                    const newConfig = { ...configRef.current, reminderRules: updatedRules }
+                    await saveConfig(newConfig)
+                    // 通知后台重新初始化
+                    await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+                  }}
+                  timeFormat={config.timeFormat}
+                />
               </div>
-              <Statistics />
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+            )}
+
+            {/* Reminder Styles Section */}
+            {activeSection === 'styles' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">{t('options.nav.styles', 'Reminder Styles')}</h2>
+                  <p className="text-sm text-slate-500">
+                    {t(
+                      'options.styles.description',
+                      'Customize the sound and message style of your reminders to make them more engaging',
+                    )}
+                  </p>
+                </div>
+
+                <ReminderStyleSettings
+                  config={config}
+                  onConfigChange={async (newConfig) => {
+                    updateConfig(newConfig)
+                    await saveConfig(newConfig)
+                    await browser.runtime.sendMessage({ type: 'REINIT_ALARMS' })
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Template Section */}
+            {activeSection === 'template' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('options.template.title')}</h2>
+                    <p className="text-sm text-slate-500">{t('options.template.hint')}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleResetTemplate()}
+                    className="gap-2"
+                  >
+                    <ReloadIcon className="h-4 w-4" />
+                    {t('options.template.reset')}
+                  </Button>
+                </div>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-2">
+                    <Label htmlFor="template-content">{t('options.template.content')}</Label>
+                    <Textarea
+                      id="template-content"
+                      value={config.template.content}
+                      onChange={(e) =>
+                        updateConfig({
+                          ...configRef.current,
+                          template: { ...configRef.current.template, content: e.target.value },
+                        })
+                      }
+                      rows={12}
+                      className="font-mono text-sm"
+                      placeholder={t('options.template.placeholder')}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Statistics Section */}
+            {activeSection === 'statistics' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">{t('options.tabs.statistics', 'Statistics')}</h2>
+                  <p className="text-sm text-slate-500">Track your completion rate and streaks</p>
+                </div>
+                <Statistics />
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </>
   )
 }
 

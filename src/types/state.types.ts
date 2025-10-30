@@ -10,6 +10,10 @@ export interface DailyState {
   completedRules: string[]
   /** 最后提醒时间（ISO 字符串） */
   lastRemindTime?: string
+  /** 当天的提醒次数（用于判断紧急程度） */
+  reminderCount?: number
+  /** 连续完成天数（用于激励文案） */
+  streak?: number
 }
 
 /**

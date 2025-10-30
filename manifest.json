@@ -66,7 +66,7 @@
   "host_permissions": ["https://*/*", "http://*/*"],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "src/assets/icons/*"],
+      "resources": ["assets/*", "src/assets/icons/*", "sounds/*"],
       "matches": ["https://*/*", "http://*/*"]
     }
   ]

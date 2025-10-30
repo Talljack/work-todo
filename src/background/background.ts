@@ -9,6 +9,7 @@ import {
   onConfigChanged,
 } from '@/utils/storage'
 import { getNextReminderTime, shouldResetState, getNextMidnight } from '@/utils/time'
+import { messageStyleManager, MessageStyleManager } from '@/utils/messageStyleManager'
 
 const ALARM_NAMES = {
   REMINDER: 'todo-reminder',
@@ -151,13 +152,41 @@ async function handleReminder(): Promise<void> {
   for (const rule of rulesToRemind) {
     console.log(`Processing rule: ${rule.name}`)
 
+    // 生成智能文案（如果启用）
+    let notificationMessage = rule.notificationMessage
+    let toastMessage = rule.toastMessage
+
+    if (config.smartMessageEnabled !== false) {
+      const messageStyle = config.messageStyle || 'professional'
+      const reminderCount = state.reminderCount || 0
+      const context = MessageStyleManager.getContextByReminderCount(reminderCount)
+
+      // 生成个性化文案
+      const smartMessage = messageStyleManager.getRandomMessage(
+        messageStyle,
+        context,
+        {
+          streak: state.streak || 0,
+          time: currentTime.toLocaleTimeString(),
+          deadline: rule.deadline,
+          ruleName: rule.name,
+        },
+        'auto',
+      )
+
+      notificationMessage = smartMessage
+      toastMessage = smartMessage
+
+      console.log(`Using smart message (style: ${messageStyle}, context: ${context}): ${smartMessage}`)
+    }
+
     // 1. 发送系统通知
     try {
       await browser.notifications.create({
         type: 'basic',
         iconUrl: browser.runtime.getURL('src/assets/icons/icon-128.png'),
         title: rule.notificationTitle,
-        message: rule.notificationMessage,
+        message: notificationMessage,
         priority: 2,
       })
       console.log('✓ Notification created')
@@ -193,10 +222,13 @@ async function handleReminder(): Promise<void> {
         try {
           await browser.tabs.sendMessage(tab.id, {
             type: 'SHOW_TOAST',
-            message: rule.toastMessage,
+            message: toastMessage,
             duration: rule.toastDuration * 1000,
             url: rule.toastClickUrl,
             backgroundColor: config.toastBackgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            soundEnabled: config.soundEnabled !== false,
+            soundStyle: config.soundStyle || 'professional',
+            reminderCount: state.reminderCount || 0,
           })
           toastSent = true
           console.log(`✓ Toast sent to tab ${tab.id}`)

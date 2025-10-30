@@ -65,6 +65,8 @@ export interface TodoTemplate {
  * 应用配置
  */
 export type TimeFormat = '24h' | '12h'
+export type SoundStyle = 'professional' | 'cute' | 'minimal' | 'motivational' | 'humorous'
+export type MessageStyle = 'professional' | 'cute' | 'motivational' | 'humorous' | 'minimal'
 
 export interface AppConfig {
   /** 提醒规则列表 */
@@ -81,6 +83,16 @@ export interface AppConfig {
   version: number
   /** 旧版配置（用于迁移兼容）*/
   workDays?: WorkDayConfig
+  /** 声音提醒风格 */
+  soundStyle?: SoundStyle
+  /** 声音音量 (0-100) */
+  soundVolume?: number
+  /** 是否启用声音提醒 */
+  soundEnabled?: boolean
+  /** 文案提醒风格 */
+  messageStyle?: MessageStyle
+  /** 是否启用智能文案（使用风格化文案替代默认文案） */
+  smartMessageEnabled?: boolean
 }
 
 /**
@@ -308,7 +320,7 @@ export const createPresetReminderRules = (lang?: string): ReminderRule[] => {
  * 默认配置
  */
 export const DEFAULT_CONFIG: AppConfig = {
-  version: 6, // 版本 6: 新增时间制式配置
+  version: 8, // 版本 8: 将声音和智能文案功能默认改为关闭
   reminderRules: createPresetReminderRules(),
   template: {
     content: getDefaultTemplateContent(),
@@ -316,4 +328,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
   timeFormat: '24h',
   toastBackgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  soundStyle: 'professional',
+  soundVolume: 70,
+  soundEnabled: false,
+  messageStyle: 'professional',
+  smartMessageEnabled: false,
 }
